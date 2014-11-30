@@ -38,24 +38,82 @@ val is_cons : 'a t -> bool
 (** {6 Generation} *)
 (*__________________________________________________________________________*)
 
+val cyclic : 'a -> 'a t
+
 (** Infinite lazy list from a single value *)
 val repeat : 'a -> 'a t
 
 (** Lazy list from general iterator *)
-val iterate : 'a -> ?step:('a -> 'a) -> ?until:'a -> 'a t
+val iterate : 'a -> ?step:('a -> 'a) -> ?until:'a -> unit -> 'a t
 
-(** Lazy list from generator function. *)
+(** Lazy list from generator function *)
 val from_thunk : (unit -> 'a option) -> 'a t
 
-(** Lazy list from generator function, stops when exception is thrown *)
-val from_thunk_exc : exn -> (unit -> 'a) -> 'a t
+(** Lazy list from generator function, list terminates on exception *)
+val from_thunk_exn : exn -> (unit -> 'a) -> 'a t
 
-(** Efficient lazy list generation using continuations *)
-val from_callback : 'a -> ('a -> ('a -> 'a t) -> 'a t) -> 'a t
+(** Lazy list from generator function, list terminates on Exit exception *)
+val from_thunk_exit : (unit -> 'a) -> 'a t
+
+(** Efficient lazy list generation using continuations, these allocate
+   slightly more than the [from_thunk] generators, but are usually
+   faster. *)
+
+(** *)
+val from_callback0	: (('a -> 'a cell) -> 'a cell) -> 'a t
+
+(** *)
+val from_callback	: (('a -> 'a cell) -> 'a -> 'a cell) -> 'a -> 'a t
+
+(** *)
+val from_callback_alt	: (('a -> 'a cell) -> 'a -> 'a cell) -> 'a -> 'a t
+
+(** *)
+val from_callback2	: (('a -> 'b -> 'b cell) -> 'a -> 'b cell) -> 'a -> 'b t
+
+(** Very fast because list representation is subset of lazy list
+    representation. *)
+val from_list : 'a list -> 'a t
+
+(** *)
+val from_array : 'a array -> 'a t
+
+(** Integers *)
 
 (** *)
 val count_up : int -> ?step:int -> int -> int t
 
 (** *)
 val count_down : int -> ?step:int -> int -> int t
+
+(** {6 Transformation} *)
+(*__________________________________________________________________________*)
+
+(** *)
+val map : ('a -> 'b) -> 'a t -> 'b t
+
+(** *)
+val filter : ('a -> bool) -> 'a t -> 'a t
+
+(** *)
+val filter_map : ('a -> bool) -> ('a -> 'b) -> 'a t -> 'b t
+
+(** *)
+val transform : ('a -> 'b option) -> 'a t -> 'b t
+
+(** *)
+val transform_with_callback : (('a t -> 'b cell) -> 'a cell -> 'b cell) -> 'a t -> 'b t
+
+(** *)
+val force : int -> 'a t -> unit
+
+(** {6 } *)
+(*__________________________________________________________________________*)
+
+(** *)
+val fold : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+
+(** *)
+val iter : ('a -> unit) -> 'a t -> unit
+
 
