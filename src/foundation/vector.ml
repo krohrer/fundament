@@ -67,3 +67,12 @@ let swap v i j =
   let t = get v i in
   set v i (get v j);
   set v j t
+
+let shuffle ~rand v =
+  assert false
+
+let copy ?compact v =
+  assert false
+
+let compact v =
+  assert false
