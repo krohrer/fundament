@@ -1,3 +1,8 @@
+profileIteratee:
+	ocamlbuild -cflags -rectypes profileEnumee.native
+	@echo "Make: Compilation done. Starting profile..."
+	./profileEnumee.native
+
 test:
 	ocamlbuild testVector.byte
 	./testVector.byte

@@ -218,3 +218,12 @@ let transform_with_callback cb =
   in
   fun l -> lazy (k l)
 
+let enum l =
+  let cur = ref l in
+  let rec cont b ~it =
+    match L.force !cur with
+    | Nil -> b
+    | Cons (a, rest) -> cur := rest; it a b ~cont
+  in
+  fun cee -> cee ~cont
+

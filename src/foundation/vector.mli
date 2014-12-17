@@ -2,7 +2,6 @@
 
 type 'a t
 type index = int
-type cursor = private index
 
 val make : ?cap:int -> unit -> 'a t
 val init : int -> (int -> 'a) -> 'a t
@@ -11,13 +10,7 @@ val accomodate : index -> 'a t -> unit
 
 (*__________________________________________________________________________*)
 
-val enum' : ('a->'a,'b) Enumee.t -> 'b t -> 'a -> 'a
-val enum1 : (_->'a->'a,'b) Enumee.t -> 'b t -> 'a -> 'a
-val enum2 : (_->_->'a->'a,'b) Enumee.t-> 'b t -> 'a -> 'a
-
-val r2enum' : 'b t -> ('a,'b) Enumee.Rec2.t -> 'a -> 'a
-val r2enum1 : 'b t -> (_->'a,'b) Enumee.Rec2.t -> 'a -> 'a
-val r2enum2 : 'b t -> (_->_->'a,'b) Enumee.Rec2.t -> 'a -> 'a
+val enum : 'a t -> 'b -> ('a,'b) Enumee.t -> 'b
 
 (*__________________________________________________________________________*)
 

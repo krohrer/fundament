@@ -104,7 +104,7 @@ val transform_with_callback : (('a t -> 'b cell) -> 'a cell -> 'b cell) -> 'a t 
 (** *)
 val force : int -> 'a t -> unit
 
-(** {6 } *)
+(** {6 Enumeration} *)
 (*__________________________________________________________________________*)
 
 (** *)
@@ -113,4 +113,5 @@ val fold : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
 (** *)
 val iter : ('a -> unit) -> 'a t -> unit
 
-
+(** *)
+val enum : 'a t -> ('a,'b) Iteratee.t -> 'b

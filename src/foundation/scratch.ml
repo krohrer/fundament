@@ -67,7 +67,7 @@ let () =
   let a = Array.init 10 float in
   Test.enum a (Test.iter (Printf.printf "%f\n%!"))
 
-let () =
+let _ =
   let a = Array.init 10 (fun x -> x) in
   Test.enum a (Test.fold (+) 0)
 

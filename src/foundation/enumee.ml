@@ -1,87 +1,70 @@
-type ('a,'b) t = continue:'a -> 'b -> 'a
+type ('a,'b) t = 'b -> cont:('a,'b) cont -> 'b
+and ('a,'b) cont = 'b -> it:('a -> ('a,'b) t) -> 'b
 
-let fold' f =
-  fun ~continue b a -> continue (f a b)
+let fold f =
+  let rec it a b ~cont =
+    cont (f b a) ~it
+  in
+  fun init ~cont ->
+    cont init ~it
 
-let fold1 f =
-  fun ~continue b s1 a -> continue s1 (f a b)
+let any_of pred =
+  let rec it a b ~cont =
+    pred a || cont b ~it
+  in
+  fun _ ~cont ->
+    cont false ~it
 
-let fold2 f =
-  fun ~continue b s1 s2 a -> continue s1 s2 (f a b)
+let all_of pred =
+  let rec it a b ~cont =
+    pred a && cont b ~it
+  in
+  fun _ ~cont ->
+    cont true ~it
 
-let fold3 f =
-  fun ~continue b s1 s2 s3 a -> continue s1 s2 s3 (f a b)
+let iter proc =
+  let rec it a () ~cont =
+    proc a; cont () ~it
+  in
+  fun () ~cont ->
+    cont () ~it
 
-let iter' f =
-  fun ~continue b a -> f b; continue a
+let array_enum arr =
+  let cur = ref 0 in
+  let rec cont b ~it =
+    let i = !cur in
+    cur := i + 1;
+    if i < Array.length arr then
+      it arr.(i) b ~cont
+    else
+      b
+  in
+  fun b it -> it b ~cont
 
-let iter1 f =
-  fun ~continue b s1 a -> f b; continue s1 a
+let array_enumi arr =
+  let n = Array.length arr in
+  let rec cont i ~it =
+    if i < n then
+      it arr.(i) (i+1) ~cont
+    else
+      i
+  in
+  fun it -> it 0 ~cont
 
-let iter2 f =
-  fun ~continue b s1 s2 a -> f b; continue s1 s2 a
+let list_enumi l =
+  let rec cont l ~it =
+    match l with
+    | [] -> []
+    | a::rest -> it a rest ~cont
+  in
+  fun it -> it l ~cont
 
-let iter3 f =
-  fun ~continue b s1 s2 s3 a -> f b; continue s1 s2 s3 a
-
-module Rec =
-  struct
-    type ('a,'b) t = continue:(('a,'b) t -> 'a) -> 'b -> 'a
-
-    let fold' f =
-      let rec re ~continue b a = continue re (f a b) in
-      re
-
-    let fold1 f =
-      let rec re ~continue b a s1 = continue re (f a b) s1 in
-      re
-
-    let fold2 f =
-      let rec re ~continue b a s1 s2 = continue re (f a b) s1 s2 in
-      re
-
-    let fold3 f =
-      let rec re ~continue b a s1 s2 s3 = continue re (f a b) s1 s2 s3 in
-      re
-  end
-
-module Rec2 =
-  struct
-    type ('a,'b) t = continue:(('a,'b) t -> 'a -> 'a) -> 'b -> 'a
-
-    let iter' f =
-      let stop = () in
-      let rec re ~continue b = f b; continue re stop in
-      re
-
-    let iter1 f =
-      let stop _ = () in
-      let rec re ~continue b s1 = f b; continue re stop s1 in
-      re
-
-    let iter2 f =
-      let stop _ _ = () in
-      let rec re ~continue b s1 s2 = f b; continue re stop s1 s2 in
-      re
-
-    let any_of' f =
-      let stop = false in
-      let rec re ~continue b = if f b then true else continue re stop in
-      re
-
-    let any_of1 f =
-      let stop _ = false in
-      let rec re ~continue b s1 = if f b then true else continue re stop s1 in
-      re
-
-    let all_of' f =
-      let stop = true in
-      let rec re ~continue b = if f b then true else continue re stop in
-      re
-
-    let all_of1 f =
-      let stop _ = true in
-      let rec re ~continue b s1 = if f b then true else continue re stop s1 in
-      re
-  end
+let list_enum l =
+  let cur = ref l in
+  let rec cont b ~it =
+    match !cur with
+    | [] -> b
+    | a::rest -> cur := rest; it a b ~cont
+  in
+  fun b it -> it b ~cont
 

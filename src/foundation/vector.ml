@@ -3,7 +3,6 @@ type 'a t =
       mutable block : Obj.t }
 
 type index = int
-type cursor = index
 
 let make ?(cap=8) () =
   assert (0 <= cap);
@@ -74,53 +73,18 @@ let compact v =
 
 (*__________________________________________________________________________*)
 
-let enum' e v =
-  let cursor = ref 0 in
-  let rec continue a =
-    let i = !cursor in
-    if i < count v then (
-      cursor := i+1;
-      e ~continue (get v i) a
-    )
-    else	
-      a
-  in
-  continue
+let preinc r = let i = !r in r := i + 1; i
 
-let enum1 e v =
-  let rec continue i a =
-    if i < count v then
-      e ~continue (get v i) (i+1) a
+let enum vec =
+  let cur = ref 0 in
+  let rec cont b ~it =
+    let i = preinc cur in
+    if i < count vec then
+      it (get vec i) b ~cont
     else
-      a
+      b
   in
-  continue 0
-
-let enum2 e =
-  let rec continue v i a =
-    if i < count v then
-      e ~continue (get v i) v (i+1) a
-    else
-      a
-  in
-  fun v -> continue v 0
-
-(*__________________________________________________________________________*)
-
-let r2enum' v =
-  let cursor = ref 0 in
-  let rec continue next fin =
-    let i = !cursor in
-    if i < count v then (
-      cursor := i + 1;
-      next ~continue (get v i)
-    ) else
-      fin
-  in
-  continue
-
-let r2enum1 _ = assert false
-let r2enum2 _ = assert false
+  fun b cee -> cee b ~cont
 
 (*__________________________________________________________________________*)
 
