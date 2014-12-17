@@ -1,0 +1,12 @@
+.DS_Store
+*~
+*.cm[x,i,o,a]
+*.cmxa
+*.o
+*.opt
+*.top
+*.native
+*.byte
+_build/
+\#*
+.\#*

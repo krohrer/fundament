@@ -66,9 +66,6 @@ val from_callback0	: (('a -> 'a cell) -> 'a cell) -> 'a t
 val from_callback	: (('a -> 'a cell) -> 'a -> 'a cell) -> 'a -> 'a t
 
 (** *)
-val from_callback_alt	: (('a -> 'a cell) -> 'a -> 'a cell) -> 'a -> 'a t
-
-(** *)
 val from_callback2	: (('a -> 'b -> 'b cell) -> 'a -> 'b cell) -> 'a -> 'b t
 
 (** Very fast because list representation is subset of lazy list

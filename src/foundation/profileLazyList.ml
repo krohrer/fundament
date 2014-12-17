@@ -23,10 +23,6 @@ let profile_baseline =
   ()
 
 let profile_from_callback =
-  profile_case "from_callback_alt"
-    (fun () -> force n (from_callback_alt
-			  (fun k x -> k (x +. 1.0))
-			  0.0));
   profile_case "from_callback"
     (fun () -> force n (from_callback
 			  (fun k x -> k (x +. 1.0))
