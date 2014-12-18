@@ -51,13 +51,13 @@ let array_enumi arr =
   in
   fun it -> it 0 ~cont
 
-let list_enumi l =
+let list_enumi =
   let rec cont l ~it =
     match l with
     | [] -> []
     | a::rest -> it a rest ~cont
   in
-  fun it -> it l ~cont
+  fun l it -> it l ~cont
 
 let list_enum l =
   let cur = ref l in
@@ -67,4 +67,3 @@ let list_enum l =
     | a::rest -> cur := rest; it a b ~cont
   in
   fun b it -> it b ~cont
-

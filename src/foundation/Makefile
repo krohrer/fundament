@@ -3,6 +3,10 @@ profileIteratee:
 	@echo "Make: Compilation done. Starting profile..."
 	./profileEnumee.native
 
+scratch:
+	ocamlbuild -cflags -rectypes scratch.native
+	./scratch.native
+
 test:
 	ocamlbuild testVector.byte
 	./testVector.byte

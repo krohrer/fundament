@@ -3,9 +3,7 @@ type case
 type label = string
 type measurement = [`allocations | `heap_words | `heap_blocks | `time]
 
-val case : label -> (unit -> 'a) -> case
+val profile : label -> (unit -> 'a) -> t
+val comparison	: label -> measurement list -> t list -> t
 
-val comparison	: label -> measurement_list -> t
-val singleton	: label -> measurement_list -> t
-
-val run : ?repeat:int -> t -> unit
+val run : ?repeat:int -> ?fmt:Format.formatter -> t list -> unit

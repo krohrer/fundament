@@ -12,4 +12,3 @@ val any_of : ('a -> bool) -> ('a,bool) t
 val all_of : ('a -> bool) -> ('a,bool) t
 val iter : ('a -> unit) -> ('a,unit) t
 
-(* val iteri : ('a -> 'b -> unit) -> ('a,'b) t *)
