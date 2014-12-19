@@ -1,23 +1,39 @@
-type +'a t
-type label = string
-type probe = [`allocations | `heap_words | `heap_blocks | `time]
+type 'a t
 
-val default_probes : probe list
+and label = string
 
-val group : label -> [< `compare|`group] t list -> t
-val trial : label -> (unit -> 'a) -> [`trial] t
-val compare : label -> ?probe:probe list -> [< `trial] list -> t
+and 'a thunk = unit -> 'a
+
+and probe
+
+
+val group : label -> [<`compare|`group] t list -> [`group] t
+val trial : label -> 'a thunk -> [`trial] t
+val compare : label -> ?seed:bytes -> ?repeat:int -> ?probes:probe list -> [`trial] t list -> [`compare] t
+
+
+module Probe :
+  sig
+    type t = probe
+      
+    val defaults : t list
+
+    val time		: t
+    val allocated_words	: t
+    val allocated_bytes	: t
+    val heap_words	: t
+    val heap_blocks	: t
+  end
 
 val run :
-  ?repeat:int ->
   ?fmt:Format.formatter ->
   label ->
-  [<`compare|`grou] list -> unit
+  [<`compare|`group] list -> unit
 
 (* E.g. 
 
 let () = Dynamometer.run ~repeat:10
-  "Testing iteration speed of diffenrent constructs"
+  "Testing iteration speed of different constructs"
   [
     comparison "Array" [
       trial "unfolded" (fun () -> ());

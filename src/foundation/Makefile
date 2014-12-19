@@ -1,3 +1,7 @@
+dynamometer:
+	ocamlbuild dynamometer.native
+	./dynamometer.native
+
 profileIteratee:
 	ocamlbuild -cflags -rectypes profileEnumee.native
 	@echo "Make: Compilation done. Starting profile..."
