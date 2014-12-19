@@ -17,21 +17,21 @@ and probe
 
 (*__________________________________________________________________________*)
 
-val group : label -> [<`compare|`group] t list -> [`group] t
+val group : label -> [`compare|`group] t list -> [>`group] t
 
-val trial : label -> 'a thunk -> [`trial] t
+val trial : label -> 'a thunk -> [>`trial] t
 
 val compare :
   label ->
   ?random:Random.State.t ->
   ?repeat:int ->
   ?probes:probe list ->
-  [`trial] t list -> [`compare] t
+  [`trial] t list -> [>`compare] t
 
 val run :
   ?fmt:Format.formatter ->
   label ->
-  [<`compare|`group] list -> unit
+  [`compare|`group] t list -> unit
 
 (*__________________________________________________________________________*)
 

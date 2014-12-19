@@ -34,11 +34,11 @@ module Probe =
   end
 
 (*__________________________________________________________________________*)
-
+    
 type 'a t =
-  | Trial	: label * 'a thunk -> [`trial] t
-  | Compare	: label * compare -> [`compare] t
-  | Group	: label * [<`compare|`group] t list -> [`group] t
+  | Trial	: label * 'b thunk			-> ([>`trial] as 'a) t
+  | Compare	: label * compare			-> ([>`compare] as 'a) t
+  | Group	: label * [<`compare|`group] t list	-> ([>`group] as 'a) t
 
 and label = string
 
@@ -49,12 +49,12 @@ and measurement =
   | MeasureTime		of float array
 
 and compare =
-    { random	: Random.State.t;
-      repeat	: int;
-      probes	: probe array;
-      trials	: [`trial] t array; 
-      ranking	: int array;
-      stats	: Stats.t option array;
+    { random		: Random.State.t;
+      repeat		: int;
+      probes		: probe array;
+      trials		: [`trial] t array; 
+      ranking		: int array;
+      stats		: Stats.t option array;
       measurements	: trial:int -> probe:int -> float array }
 
 and probe = Probe.t
@@ -72,18 +72,30 @@ let compare label ?random ?(repeat=1) ?(probes=Probe.defaults) trials =
   Compare (label, {
     random;
     repeat;
-    probes = Array.of_list probes;
-    trials = Array.of_list trials;
-    ranking = Array.make repeat (-1);
-    stats = Array.make repeat None;
-    measurements = fun ~trial ~probe -> assert false
+    probes		= Array.of_list probes;
+    trials		= Array.of_list trials;
+    ranking		= Array.make repeat (-1);
+    stats		= Array.make repeat None;
+    measurements	= fun ~trial ~probe -> assert false
   })
 
 let group =
   fun label list -> Group (label, list)
 
-let run ?(fmt=Format.std_formatter) label list =
+let rec run_group fmt label list =
   assert false
+and run_trial fmt label thunk comp =
+  assert false
+and run_compare fmt label comp =
+  assert false
+
+let run ?(fmt=Format.std_formatter) label (list:[`compare|`group] t list) =
+  list |> List.iter
+      (function
+      | Group (label, list)	-> run_group fmt label list
+      | Compare (label, cmp)	-> run_compare fmt label cmp
+      | _ -> assert false)
+    
 
 (*__________________________________________________________________________*)
 
