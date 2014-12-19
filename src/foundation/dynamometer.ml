@@ -36,9 +36,12 @@ module Probe =
 (*__________________________________________________________________________*)
     
 type 'a t =
-  | Trial	: label * 'b thunk			-> ([>`trial] as 'a) t
-  | Compare	: label * compare			-> ([>`compare] as 'a) t
-  | Group	: label * [<`compare|`group] t list	-> ([>`group] as 'a) t
+  | Trial	: label * 'b thunk	-> trial t
+  | Compare	: label * compare	-> group t
+  | Group	: label * group t list	-> group t
+
+and trial
+and group
 
 and label = string
 
@@ -52,7 +55,7 @@ and compare =
     { random		: Random.State.t;
       repeat		: int;
       probes		: probe array;
-      trials		: [`trial] t array; 
+      trials		: trial t array; 
       ranking		: int array;
       stats		: Stats.t option array;
       measurements	: trial:int -> probe:int -> float array }
@@ -89,7 +92,7 @@ and run_trial fmt label thunk comp =
 and run_compare fmt label comp =
   assert false
 
-let run ?(fmt=Format.std_formatter) label (list:[`compare|`group] t list) =
+let run ?(fmt=Format.std_formatter) label list =
   list |> List.iter
       (function
       | Group (label, list)	-> run_group fmt label list
