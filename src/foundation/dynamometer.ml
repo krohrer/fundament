@@ -1,3 +1,5 @@
+(*__________________________________________________________________________*)
+
 module Probe =
   struct
     type t =
@@ -31,6 +33,8 @@ module Probe =
 		     heap_blocks ]
   end
 
+(*__________________________________________________________________________*)
+
 type 'a t =
   | Trial	: label * 'a thunk -> [`trial] t
   | Compare	: label * compare -> [`compare] t
@@ -55,6 +59,8 @@ and compare =
 
 and probe = Probe.t
 
+(*__________________________________________________________________________*)
+
 let trial label thunk = Trial (label, thunk)
 
 let compare label ?seed ?(repeat=1) ?(probes=Probe.defaults) trials =
@@ -73,3 +79,17 @@ let group =
 
 let run ?(fmt=Format.std_formatter) label list =
   assert false
+
+(*__________________________________________________________________________*)
+
+let () = run "Testing iteration speed of different constructs"
+  [
+    compare "Array" [
+      trial "unfolded" (fun () -> ());
+      trial "enum+fold" (fun () -> ());
+    ];
+    compare "List" [
+      trial "unfolded" (fun () -> ());
+      trial "enum+fold" (fun () -> ());
+    ];
+  ]
