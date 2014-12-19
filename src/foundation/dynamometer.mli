@@ -1,3 +1,10 @@
+(** Dynamometer: benchmarking the OCaml way.
+
+    - Compare and rank trials of thunks, optionally grouped.
+    - Randomized sequence of trials for each repetition.
+    - Measure using different probe setups and.
+    - Statistics per trial and rankings per comparision.
+*)
 (*__________________________________________________________________________*)
 
 type 'a t
@@ -16,7 +23,7 @@ val trial : label -> 'a thunk -> [`trial] t
 
 val compare :
   label ->
-  ?seed:bytes ->
+  ?random:Random.State.t ->
   ?repeat:int ->
   ?probes:probe list ->
   [`trial] t list -> [`compare] t

@@ -49,7 +49,7 @@ and measurement =
   | MeasureTime		of float array
 
 and compare =
-    { seed	: bytes option;
+    { random	: Random.State.t;
       repeat	: int;
       probes	: probe array;
       trials	: [`trial] t array; 
@@ -63,9 +63,14 @@ and probe = Probe.t
 
 let trial label thunk = Trial (label, thunk)
 
-let compare label ?seed ?(repeat=1) ?(probes=Probe.defaults) trials =
+let compare label ?random ?(repeat=1) ?(probes=Probe.defaults) trials =
+  let random =
+    match random with
+    | None	-> Random.State.make_self_init ()
+    | Some r	-> r
+  in
   Compare (label, {
-    seed;
+    random;
     repeat;
     probes = Array.of_list probes;
     trials = Array.of_list trials;
