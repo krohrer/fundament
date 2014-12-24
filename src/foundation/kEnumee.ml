@@ -23,60 +23,53 @@ let fold f =
 module Array =
   struct
     include Array
-    type ('i,'k) cursor = { array		: 'i array;
-			    count		: int;
-			    mutable index	: int;
-			    k		: 'k }
+    type ('i,'a,'o) cursor = { array	: 'i array;
+			       count	: int;
+			       mutable i: int;
+			       k	: 'a -> 'o -> k }
   end
 
-type ('i,'k) array_cursor = ('i,'k) Array.cursor
+type ('i,'a,'o) array_cursor = ('i,'a,'o) Array.cursor
 
-let array_enumi_stop : ('i,'a,('i,'a->'o->unit) array_cursor,'o) stop = fun (type i) (_:i option) a s o ->
+let array_enumi_stop : ('i,'a,('i,'a,'o) array_cursor,'o) stop = fun _ a s o ->
+(* let array_enumi_stop _ a s o = *)
     s.Array.k a o
 
-let rec array_enumi_cont : ('i,'a,('a,'o) array_cursor as 's,'o) cont = fun a s it -> 
+let rec array_enumi_cont : ('i,'a,('i,'a,'o) array_cursor,'o) cont = fun a s it ->
+(* let rec array_enumi_cont a s it = *)
     Array.(
-      let i = s.index in
-      s.index <- i + 1;
+      let i = s.i in
+      s.i <- i + 1;
       if i < s.count then
-	(it:('i,'a,'s,'o) t) s.array.(i) a s
-	  array_enumi_cont
-	  array_enumi_stop
+	it s.array.(i) a s array_enumi_cont array_enumi_stop
       else
 	()
     )
 
-let array_enumi : ( 'i array ->
-		    'a ->
-		    k:('a->'o->k) ->
-		    it:('i,'a,('i,'a->'s->k) array_cursor,'o) t ->
-		    unit )
-    =
-  fun (array:'i array) (a:'a) ~k ~it ->
-    Array.(
-      let count = Array.length array
-      and index = 0 in
-      if index < count then
-	let cursor = { array;
-		       count;
-		       index;
-		       k } in
-	it array.(index) a cursor
-	  array_enumi_cont
-	  array_enumi_stop
-    )
+let array_enumi array a ~it ~k =
+  Array.(
+    let count = Array.length array
+    and i = 0 in
+    if i < count then
+      it
+	array.(i)
+	a
+	{ array; count; i; k }
+	array_enumi_cont
+	array_enumi_stop
+  )
 
-type 'a list_cursor = 'a list
+(* type 'a list_cursor = 'a list *)
 
-let list_enumi = 
-  let rec stop _ a k o =
-    k a o
-  and cont a k it =
-    match a with
-    | []	-> ()
-    | i::rest	-> it i rest k stop cont
-  in
-  fun list ~k ~it ->
-    cont list k it
+(* let list_enumi =  *)
+(*   let rec stop _ a k o = *)
+(*     k a o *)
+(*   and cont a k it = *)
+(*     match a with *)
+(*     | []	-> () *)
+(*     | i::rest	-> it i rest k stop cont *)
+(*   in *)
+(*   fun list ~k ~it -> *)
+(*     cont list k it *)
   
 (* val list_enumi : 'i list -> 'a -> cont:('a -> 'o -> unit) -> ('i,'a,'i list_cursor,'o) t -> unit *)

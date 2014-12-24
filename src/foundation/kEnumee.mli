@@ -25,17 +25,20 @@ and ('i,'a,'s,'o) stop =
 val return : 'o -> ('i,'a,'s,'o) t
 val fold : ('a->'b->'a) -> ('b,'a,'s,'a) t
 
-type 'a list_cursor
+type ('i,'a,'o) array_cursor
+
+val array_enumi_stop : ('i,'a,('i,'a,'o) array_cursor,'o) stop
+val array_enumi_cont : ('i,'a,('i,'a,'o) array_cursor,'o) cont
 
 val array_enumi :
     'i array
     -> 'a
-  -> k:('a -> 'o -> unit)
-  -> it:('i,'a,'s,'o) t
+  -> it:('i,'a,('i,'a,'o) array_cursor,'o) t
+  -> k:('a->'o->unit)
   -> unit
 
-val list_enumi :
-  'i list
-  -> k:('o -> unit)
-  -> it:('i,'i list_cursor,('a->'o->unit),'o) t
-  -> unit
+(* val list_enumi : *)
+(*   'i list *)
+(*   -> k:('o -> unit) *)
+(*   -> it:('i,'i list_cursor,('a->'o->unit),'o) t *)
+(*   -> unit *)
