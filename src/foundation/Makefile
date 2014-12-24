@@ -1,11 +1,16 @@
-dynamometer:
-	ocamlbuild dynamometer.native
-	./dynamometer.native
-
 profileIteratee:
 	ocamlbuild -cflags -rectypes profileEnumee.native
 	@echo "Make: Compilation done. Starting profile..."
 	./profileEnumee.native
+
+dump:
+	@echo "Make: Dumping CMM"
+	ocamlopt -rectypes -I _build -dcmm enumee.ml 2> enumee.dcmm
+	ocamlopt -rectypes -I _build -dcmm profileEnumee.ml 2> profileEnumee.dcmm
+
+dynamometer:
+	ocamlbuild dynamometer.native
+	./dynamometer.native
 
 scratch:
 	ocamlbuild -cflags -rectypes scratch.native
