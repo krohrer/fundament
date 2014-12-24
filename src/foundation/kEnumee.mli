@@ -4,7 +4,7 @@
     the stack, by using continuation-passing style.
 
     The state and accumulator types have to be exposed so that this
-    can work efficiently.
+    can work efficiently? At least, if we 
 
     Also, mutation should be avoided for variables represented as
     blocks in the runtime, so as not to trigger the Gc write
@@ -22,23 +22,28 @@ and ('i,'a,'s,'o) cont =
 and ('i,'a,'s,'o) stop =
     'i option -> 'a -> 's -> 'o -> k
 
+(*__________________________________________________________________________*)
+
 val return : 'o -> ('i,'a,'s,'o) t
 val fold : ('a->'b->'a) -> ('b,'a,'s,'a) t
 
-type ('i,'a,'o) array_cursor
+(*__________________________________________________________________________*)
 
-val array_enumi_stop : ('i,'a,('i,'a,'o) array_cursor,'o) stop
-val array_enumi_cont : ('i,'a,('i,'a,'o) array_cursor,'o) cont
+module Array :
+  sig
+    type ('i,'o) s
+    type index = private int
 
-val array_enumi :
-    'i array
-    -> 'a
-  -> it:('i,'a,('i,'a,'o) array_cursor,'o) t
-  -> k:('a->'o->unit)
-  -> unit
+    val enumi_stop : ('i,index,('i,'o) s,'o) stop
+    val enumi_cont : ('i,index,('i,'o) s,'o) cont
+    val enumi : 'i array -> it:('i,index,('i,'o) s,'o) t -> k:('o -> unit) -> unit
+  end
 
-(* val list_enumi : *)
-(*   'i list *)
-(*   -> k:('o -> unit) *)
-(*   -> it:('i,'i list_cursor,('a->'o->unit),'o) t *)
-(*   -> unit *)
+(*__________________________________________________________________________*)
+
+module List :
+  sig
+    type 'i cursor = private 'i list
+
+    val enumi : 'i list -> it:('i,'i cursor,'k,'o) t -> k:('o -> unit as 'k) -> unit
+  end

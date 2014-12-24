@@ -22,43 +22,40 @@ let fold f =
 
 module Array =
   struct
-    include Array
-    type ('i,'a,'o) cursor = { array	: 'i array;
-			       count	: int;
-			       mutable i: int;
-			       k	: 'a -> 'o -> k }
-  end
+    type ('i,'o) s = { array	: 'i array;
+		       count	: int;
+		       k	: 'o -> k }
+    type index = int
 
-type ('i,'a,'o) array_cursor = ('i,'a,'o) Array.cursor
+    let enumi_stop _ _ s o =
+      s.k o
 
-let array_enumi_stop : ('i,'a,('i,'a,'o) array_cursor,'o) stop = fun _ a s o ->
-(* let array_enumi_stop _ a s o = *)
-    s.Array.k a o
-
-let rec array_enumi_cont : ('i,'a,('i,'a,'o) array_cursor,'o) cont = fun a s it ->
-(* let rec array_enumi_cont a s it = *)
-    Array.(
-      let i = s.i in
-      s.i <- i + 1;
+    let rec enumi_cont i s it =
       if i < s.count then
-	it s.array.(i) a s array_enumi_cont array_enumi_stop
+	it s.array.(i) (i+1) s enumi_cont enumi_stop 
       else
 	()
-    )
 
-let array_enumi array a ~it ~k =
-  Array.(
-    let count = Array.length array
-    and i = 0 in
-    if i < count then
-      it
-	array.(i)
-	a
-	{ array; count; i; k }
-	array_enumi_cont
-	array_enumi_stop
-  )
+    let enumi array ~it ~k =
+      let count = Array.length array in
+      if 0 < count then
+	it array.(0) 1 { array; count; k } enumi_cont enumi_stop
+  end
 
+module List =
+  struct
+    type 'i cursor = 'i list
+
+    let enumi_stop _ _ k o =
+      k o
+
+    let rec enumi_cont list k it =
+      match list with
+      | [] -> ()
+      | i::rest -> it i rest k enumi_cont enumi_stop
+
+    let enumi list ~it ~k = enumi_cont list k it
+  end
 (* type 'a list_cursor = 'a list *)
 
 (* let list_enumi =  *)
