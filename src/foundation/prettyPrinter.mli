@@ -1,12 +1,26 @@
 type t
 
-(* Pretty printers as a monoid structure, or whatever you wanna call it.
+(*   NOTE: See, compare, and update TODO.md.
 
-    f +++ pp_emtpy === pp_empty +++ f
+
+     Pretty printers as a monoid structure, or whatever you wanna call it.
+
+    f +++ pp0 === pp0 +++ f
     (f +++ g) +++ h === f +++ (g +++ h)
+
+   I think we could maybe use composable iteratees here as well?
+   To keep memory usage down?
+
+   Upgrade Aesq to iteratees as well and use that for output instead?
+
+   Use functorized printers / typed-tagless interpreter ?
+
 *)
 val (+++) : t -> t -> t
 val pp0 : t
+
+val pp_text		: string -> t
+val pp_newline		: unit -> t
 
 val pp_string		: string -> t
 val pp_int		: int -> t

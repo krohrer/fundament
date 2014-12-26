@@ -4,9 +4,10 @@ let pp0 ff = ()
 let (+++) f g = fun ff -> f ff; g ff
 let ( *** ) f x = f x
 
-(* f +++ pp_emtpy === pp_empty +++ f *)
+(* f +++ pp0 === pp0 +++ f *)
 (* (f +++ g) +++ h === f +++ (g +++ h) *)
 
+let pp_text txt ff = Format.pp_print_text ff txt
 let pp_string s ff = Format.pp_print_string ff s
 let pp_int i ff = Format.pp_print_int ff i
 let pp_spc ff = Format.pp_print_space ff ()
