@@ -15,6 +15,10 @@ and probe
 and label = string
 and 'a thunk = unit -> 'a
 
+type run_flag =
+  | Keep_value_alive_during_gc
+
+module Flags : Set.S with type elt = run_flag
 
 (*__________________________________________________________________________*)
 
@@ -24,6 +28,7 @@ val trial : label -> 'a thunk -> trial t
 
 val compare :
   label ->
+  ?flags:Flags.t ->
   ?random:Random.State.t ->
   ?repeat:int ->
   ?probes:probe list ->
@@ -31,7 +36,8 @@ val compare :
 
 val run :
   ?fmt:Format.formatter ->
-  label ->
+  title:string ->
+  description:string ->
   group t list -> unit
 
 (*__________________________________________________________________________*)

@@ -1,5 +1,8 @@
-type ('a,'b) t = 'b -> cont:('a,'b) cont -> 'b
-and ('a,'b) cont = 'b -> it:('a -> ('a,'b) t) -> 'b
+type ('a,'b) t =
+    'b -> cont:('a,'b) cont -> 'b
+
+and ('a,'b) cont =
+    'b -> it:('a -> ('a,'b) t) -> 'b
 
 let fold f =
   let rec it a b ~cont =

@@ -13,3 +13,5 @@ module type SEXPR =
   end
 
 (* OCaml is AWESOME! *)
+
+type t = C : 's * ('s -> unit) -> t

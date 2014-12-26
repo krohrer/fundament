@@ -40,6 +40,7 @@ let float_stat_from_series series =
     s.sigma <- s.sigma +. square (series.(i) -. s.mean)
   done;
   s.sigma <- sqrt (s.sigma /. float n);
+  s
 
 (*__________________________________________________________________________*)
 

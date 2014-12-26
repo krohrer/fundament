@@ -11,6 +11,13 @@ let from_array arr =
       else
 	None
 
+let from_list list =
+  let cur = ref list in
+  fun () ->
+    match !cur with
+    | [] -> None
+    | i::rest -> cur := rest; Some i
+
 let fold f =
   let rec loop a seq =
     match seq () with
