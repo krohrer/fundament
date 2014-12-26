@@ -1,13 +1,13 @@
-type t
+(* Use phantom types? *)
+type t = private PrettyPrinter.t
 
-val from_formatter : Format.formatter -> t
+val underline : string -> char -> t
 
-val zero : t
-val plus : t -> t -> t
-val list : t list -> t
-
-val title : string -> t
-val text : string -> t
-val header : string -> t
-val li : t list -> t
+val title	: string	-> t
+val text	: string	-> t
+val header	: string	-> t
+val paragraph	: string	-> t
+val list	: t list	-> t
+val ulist	: t list	-> t
+val quoted	: ('a -> PrettyPrinter.t) -> 'a -> t
 
