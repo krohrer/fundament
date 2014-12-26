@@ -1,4 +1,4 @@
-# Foundation library with
+# Foundation / fundament library with
 	* The basic stuff
 	* sequences / transformations
 	  * generation / iteration
@@ -13,6 +13,8 @@
 
 ## Pinboard
 
+- Rename foundation to fundament?
+  - Same word in English and in German.
 - Enumee -> Iteratee!
   - Semantics of composition / operators.
 - Finalize interatee interface and operators (See Iteratee)
