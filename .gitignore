@@ -2,14 +2,3 @@
 *~
 \#*
 .\#*
-
-*.cm[x,i,o,a]
-*.cmxa
-*.o
-*.opt
-*.top
-*.out
-*.native
-*.byte
-_build/
-*.dcmm
