@@ -37,7 +37,7 @@ Q: Why the name "fundament"?
     base library for Apple's "OS X" and "iOS" already has the same
     name.
 	
-	And because "fundament" is a word in German and Englisha. It also
+	And because "fundament" is a word in German and English. It also
     sounds super cool.
 
 Q: What's the status as of 26.12.2014? for enumees/iteratees
