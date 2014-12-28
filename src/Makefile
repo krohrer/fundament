@@ -1,3 +1,7 @@
+ppproto:
+	ocamlbuild prettyPrinting_Prototype.native
+	./prettyPrinting_Prototype.native
+
 testIteratee:
 	ocamlbuild testIteratee.native
 	./testIteratee.native

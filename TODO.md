@@ -10,8 +10,15 @@
       preformatted, ANSI escape code based - text output using Aesq
       iteratee.
 	* Not sure about the parsing yet.
-
+	
 ## Pinboard
+
+- Development for new features should go like this:
+  1. scratch.ml file first
+  2. separate source file with "_Prototype.ml" suffix and makefile
+     target (use the same name for the makefile as for the git branch).
+  3. unit of files with tests and profiling
+  4. separate library
 
 - Enumee -> Iteratee!
   - Semantics of composition / operators.
