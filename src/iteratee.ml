@@ -1,17 +1,24 @@
-type ('i,'o,'a) continuation =
-  | Continuation :
+type ('i,'o,'a) continuations =
+  | Continuations :
       's * 
-      ('s -> exn option -> ('i,'o,'a) continuation -> ('i,'o,'a) t -> 'a -> 'a) *
+      ('s -> exn option -> ('i,'o,'a) continuations -> ('i,'o,'a) t -> 'a -> 'a) *
       ('s -> 'i option -> 'o -> 'a -> 'a) ->
-    ('i,'o,'a) continuation
+    ('i,'o,'a) continuations
 
-and ('i,'o,'a) t = 'i -> ('i,'o,'a) continuation -> 'a -> 'a
+and ('i,'o,'a) t = 'i -> ('i,'o,'a) continuations -> 'a -> 'a
 
-let continue (Continuation (s,k,_) as cont) xopt it a =
-    k s xopt cont it a
+(*__________________________________________________________________________*)
 
-let break (Continuation (s,_,k)) iopt o a =
+let continue (Continuations (s,k,_) as cont) xopt it a =
+    k s None cont it a
+
+let yield (Continuations (s,_,k)) iopt o a =
     k s iopt o a
+
+(*__________________________________________________________________________*)
+
+
+(*__________________________________________________________________________*)
 
 module Array =
   struct
@@ -21,7 +28,7 @@ module Array =
 	  mutable index	: int;
 	  k		: 'o -> 'a -> 'a }
 
-    let enum_break s _ o a =
+    let enum_yield s _ o a =
       s.k o a
 
     let rec enum_continue s xopt cont it a =
@@ -36,7 +43,7 @@ module Array =
     let enum array k it a =
       let count = Array.length array in
       if 0 < count then (
-	let cont = Continuation ({ array; count; index = 0; k }, enum_continue, enum_break) in
+	let cont = Continuations ({ array; count; index = 0; k }, enum_continue, enum_yield) in
 	it array.(0) cont a
       )
       else
@@ -49,7 +56,7 @@ module List =
 	{ mutable list : 'i list;
 	  k : 'o -> 'a -> 'a }
 
-    let enum_break s _ o a =
+    let enum_yield s _ o a =
       s.k o a
 
     let rec enum_continue s xopt cont it a =
@@ -63,7 +70,7 @@ module List =
       match list with
       | [] -> a
       | i::rest ->
-	let cont = Continuation ({ list = rest; k }, enum_continue, enum_break) in
+	let cont = Continuations ({ list = rest; k }, enum_continue, enum_yield) in
 	it i cont a
   end
 
@@ -73,7 +80,7 @@ module File =
 	{ channel : in_channel;
 	  k : 'o -> 'a -> 'a }
 
-    let enum_break s _ o a =
+    let enum_yield s _ o a =
       s.k o a
 
     let rec enum_continue s xopt cont it a =
@@ -85,7 +92,7 @@ module File =
     let enum filename k it a =
       let channel = open_in filename in
       try
-	let cont = Continuation ({ channel; k }, enum_continue, enum_break) in
+	let cont = Continuations ({ channel; k }, enum_continue, enum_yield) in
 	let a = continue cont None it a in
 	close_in channel;
 	a
@@ -93,7 +100,7 @@ module File =
       | x -> close_in channel; raise x
   end
 
-(* type ('i,'o,'k) continuation = Continuation : ('i,'o,'s,'k) cont -> ('i,'o,'k) continuation *)
+(* type ('i,'o,'k) continuations = Continuations : ('i,'o,'s,'k) cont -> ('i,'o,'k) continuations *)
 
 (* and ('i,'o,'s,'k) cont = *)
 (*     { state	: 's; *)
@@ -103,7 +110,7 @@ module File =
     (*   's *  *)
     (*   ('s -> exn option -> ('i,'o,'k) t -> 'k) * *)
     (*   ('s -> 'i option -> 'o -> 'k) -> *)
-    (* ('i,'o,'k) continuation *)
+    (* ('i,'o,'k) continuations *)
 
     (* { state	: 's; *)
     (*   continue	: 's -> exn option -> ('i,'o,'s,'k) t -> 'k; *)
