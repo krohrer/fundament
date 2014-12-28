@@ -1,4 +1,5 @@
-(* Problem: The error happens in the last case from that file *)
+(* Problem: The error happens in the last case from that file, which
+   can be confusing. *)
 
 (* File "scratch.ml", line 42, characters 2-7: *)
 (* Error: Cannot safely evaluate the definition *)
