@@ -1,3 +1,7 @@
+dynamometer:
+	ocamlbuild dynamometer.native
+	./dynamometer.native
+
 profileIteratee:
 	ocamlbuild -cflags -rectypes profileIteratee.native
 	@echo "Make: Compilation done. Starting profile..."
@@ -14,10 +18,6 @@ pp-proto:
 testIteratee:
 	ocamlbuild testIteratee.native
 	./testIteratee.native
-
-dynamometer:
-	ocamlbuild dynamometer.native
-	./dynamometer.native
 
 dump:
 	@echo "Make: Dumping CMM"

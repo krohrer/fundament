@@ -116,8 +116,6 @@ and print_group fmt label results = Format.(
   pp_print_newline fmt ();
   pp_print_string fmt (String.map (fun _ -> '-') label);
   pp_print_newline fmt ();
-  pp_open_block
-  
   ())
   
 and run_trial fmt label thunk comp =
