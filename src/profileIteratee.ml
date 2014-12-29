@@ -22,7 +22,7 @@ let cont_with_result =
   else 
     ignore
 
-let profile_array () =
+let profile_array =
   profile_case "Array/unfolded"
     (fun () ->
       let rec loop arr i n sum =
@@ -102,6 +102,12 @@ let profile_array () =
       in
       Iteratee.Array.enum int_array (fun _ a -> a) it 0
     );
+  profile_case "Array/modular-fold"
+    ModularIteratee_Prototype.(fun () -> 
+      let rec it cont a i = 
+	Fold.continue cont it ((+) a i)
+      in
+      Array.fold it 0 int_array);
   ()
 
 let profile_list =
