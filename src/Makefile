@@ -1,4 +1,8 @@
-ppproto:
+modit-proto:
+	ocamlbuild modularIteratee_Prototype.native
+	./modularIteratee_Prototype.native
+
+pp-proto:
 	ocamlbuild prettyPrinting_Prototype.native
 	./prettyPrinting_Prototype.native
 

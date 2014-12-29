@@ -1,18 +1,13 @@
 (*__________________________________________________________________________*)
 
-module Foldee =
-  struct
-    module type K =
-      sig
-	type accum
-	type iteratee
-
-	val continue : iteratee -> accum -> accum
-      end
-
-    type ('a,'it) k = (module K with type accum = 'a and type iteratee = 'it)
-
+module type Foldee =
+  sig
+    type ('a,'it) k
     type ('i,'a) t = 'i -> ('a,('i,'a) t as 'it) k -> 'a -> 'a
+
+    val continue : ('a,'it) k -> (('i,'a) t as 'it) -> 'a -> 'a
+
+    val mkk : 's -> ('s -> ('a,'it) k -> (('i,'a) t as 'it)) -> ('a,'it) k
   end
 
 (*__________________________________________________________________________*)
