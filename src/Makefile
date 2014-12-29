@@ -1,3 +1,8 @@
+profileIteratee:
+	ocamlbuild -cflags -rectypes profileIteratee.native
+	@echo "Make: Compilation done. Starting profile..."
+	./profileIteratee.native
+
 modit-proto:
 	ocamlbuild modularIteratee_Prototype.native
 	./modularIteratee_Prototype.native
@@ -9,11 +14,6 @@ pp-proto:
 testIteratee:
 	ocamlbuild testIteratee.native
 	./testIteratee.native
-
-profileIteratee:
-	ocamlbuild -cflags -rectypes profileEnumee.native
-	@echo "Make: Compilation done. Starting profile..."
-	./profileEnumee.native
 
 dynamometer:
 	ocamlbuild dynamometer.native

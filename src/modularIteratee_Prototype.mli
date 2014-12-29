@@ -2,8 +2,8 @@
 
 module Fold :
   sig
-    type ('i,'a) cont
     type ('i,'a) it = ('i,'a) cont -> 'a -> 'i -> 'a
+    and ('i,'a) cont
 
     val continue : ('i,'a) cont -> ('i,'a) it -> 'a -> 'a
 
@@ -12,28 +12,31 @@ module Fold :
       state:'s ->
       continue:('s -> ('i,'a) cont -> ('i,'a) it -> 'a -> 'a) ->
       'a -> 'i -> 'a
-
-    module Array :
-      sig
-	val fold : ('i,'a) it -> 'a -> 'i array -> 'a
-      end
   end
 
 (*__________________________________________________________________________*)
 
-(* module Enumee = *)
-(*   struct *)
-(*     module type K = *)
-(*       sig *)
-(* 	type iteratee *)
+module Iter :
+  sig
+    type 'i it = 'i cont -> 'i -> unit
+    and 'i cont
 
-(* 	val continue : iteratee -> unit *)
-(*       end *)
+    val continue : 'i cont -> 'i it -> unit
 
-(*     type 'it k = (module K with type iteratee = 'it) *)
-	
-(*     type ('i,'s) t = 'i -> 's -> (('i,'s) t as 'it) k -> unit *)
-(*   end *)
+    val run :
+      it:'i it ->
+      state:'s ->
+      continue:('s -> 'i cont -> 'i it -> unit) ->
+      'i -> unit
+  end
+
+(*__________________________________________________________________________*)
+
+module Array :
+  sig
+    val fold : ('i,'a) Fold.it -> 'a -> 'i array -> 'a
+    val iter : 'i Iter.it -> 'i array -> unit
+  end
 
 (* (\*__________________________________________________________________________*\) *)
 
