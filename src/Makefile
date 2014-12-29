@@ -1,8 +1,10 @@
+default: prof-it
+
 dynamometer:
 	ocamlbuild dynamometer.native
 	./dynamometer.native
 
-profileIteratee:
+prof-it:
 	ocamlbuild -cflags -rectypes profileIteratee.native
 	@echo "Make: Compilation done. Starting profile..."
 	./profileIteratee.native
@@ -15,7 +17,7 @@ pp-proto:
 	ocamlbuild prettyPrinting_Prototype.native
 	./prettyPrinting_Prototype.native
 
-testIteratee:
+test-it:
 	ocamlbuild testIteratee.native
 	./testIteratee.native
 
