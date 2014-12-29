@@ -46,6 +46,7 @@ module type Parser =
   end
 
 (*__________________________________________________________________________*)
+(* I am now convinced that this is a dead end. *)
 
 module ArrayIt :
   sig
