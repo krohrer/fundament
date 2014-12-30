@@ -133,7 +133,18 @@ let profile_array =
       let rec it cont a i = 
 	Fold.continue cont it ((+) a i)
       in
-      Array.fold it 0 int_array);
+      Array.fold it 0 int_array
+    );
+  profile_case "Array/unpuree"
+    UnpureIteratee_Prototype.(fun () ->
+      let sum = ref 0 in
+      enum_array int_array (XCont (sum, 
+				   (fun s i cont -> 
+				     s := (+) !s i;
+				     cont),
+				   (!))) |>
+	  run cont_with_result ignore ignore
+    );
   ()
 
 let profile_list =
@@ -177,5 +188,16 @@ let profile_list =
 	continue cont None it ((+) i a)
       in
       Array.enum int_array (fun _ a -> a) it 0
+    );
+  profile_case
+    "List/unpuree"
+    UnpureIteratee_Prototype.(fun () ->
+      let sum = ref 0 in
+      enum_list int_list (XCont (sum,
+				 (fun s i it ->
+				   s := (+) !s i;
+				   it),
+				 (!))) |>
+	  run cont_with_result ignore ignore;
     );
   ()
