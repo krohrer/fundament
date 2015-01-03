@@ -1,18 +1,18 @@
 let times = 10
 let n = 1000000
 let burn_cycles = 10
-let op = (+)
-(* let op a b = *)
-(*   for i = 0 to burn_cycles do *)
-(*     ignore (a + b) *)
-(*   done *)
-(*   ;a + b *)
+let operation = (+)
+let operation a b =
+  for i = 0 to burn_cycles do
+    ignore (a + b)
+  done
+  ;a + b
 
 let profile_case label thunk = Profiler.(
   profile ~times default thunk |> print_stats Format.std_formatter label
 )
 
-let int_vector = Vector.init n (fun x -> x)
+(* let int_vector = Vector.init n (fun x -> x) *)
 let int_array = Array.init n (fun x -> x)
 let int_list = Array.to_list int_array
 
@@ -28,7 +28,7 @@ let profile_array =
     (fun () ->
       let rec loop arr i n sum =
 	if i < n then
-	  loop arr (i+1) n ((+) sum arr.(i))
+	  loop arr (i+1) n (operation sum arr.(i))
 	else 
 	  sum
       in
@@ -39,7 +39,7 @@ let profile_array =
     (fun () ->
       let rec loop i sum =
 	if i < n then
-	  loop (i+1) ((+) sum int_array.(i))
+	  loop (i+1) (operation sum int_array.(i))
 	else
 	  sum
       in
@@ -52,7 +52,7 @@ let profile_array =
       let arr = int_array in
       let rec loop i sum =
 	if i < count then
-	  loop (i+1) ((+) sum arr.(i))
+	  loop (i+1) (operation sum arr.(i))
 	else
 	  sum
       in
@@ -62,29 +62,29 @@ let profile_array =
     "Array/sequence"
     Seq_Prototype.(fun () ->
       let seq = from_array int_array in
-      fold (+) 0 seq |> cont_with_result
+      fold operation 0 seq |> cont_with_result
     );
   profile_case
     "Array/fold_left"
     (fun () -> 
-      Array.fold_left (+) 0 int_array |> cont_with_result
+      Array.fold_left operation 0 int_array |> cont_with_result
     );
   profile_case
     "Array/enum+fold"
     Enumee_Prototype.(fun () ->
-      (array_enum int_array 0 (fold (+)) |> cont_with_result)
+      (array_enum int_array 0 (fold operation) |> cont_with_result)
     );
   profile_case
     "Array/s-enum+fold"
     SEnumee_Prototype.(fun () ->
-      (array_enum int_array 0 (fold (+)) |> cont_with_result)
+      (array_enum int_array 0 (fold operation) |> cont_with_result)
     );
   profile_case
     "Array/enumi+inline"
     Enumee_Prototype.(fun () ->
       let sum = ref 0 in
       let rec it a (i:int) ~cont : int=
-	sum := (+) !sum a;
+	sum := operation !sum a;
 	cont i ~it
       in
       let _ : int = array_enumi int_array (fun i ~cont -> cont i it) in
@@ -94,7 +94,7 @@ let profile_array =
     "Array/s-enum+inline"
     SEnumee_Prototype.(fun () ->
       array_enum int_array 0 (let rec it a m b cont = 
-				cont m ((+) a b) it
+				cont m (operation a b) it
 			      in
 			      it) |> cont_with_result
     );
@@ -102,7 +102,7 @@ let profile_array =
     "Array/cps-enumi2+linline"
     CpsEnumee_Prototype.(fun () -> 
       let rec it i cont stop a s0 s1 =
-	cont it ((+) a i) s0 s1
+	cont it (operation a i) s0 s1
       in
       let k a _ _ =
 	cont_with_result a
@@ -113,7 +113,7 @@ let profile_array =
     "Array/cps_enum+inline"
     CpsEnumee_Prototype.(fun () ->
       let rec it i cont stop a =
-	cont it ((+) a i)
+	cont it (operation a i)
       in
       let k _ a =
 	cont_with_result a
@@ -124,37 +124,61 @@ let profile_array =
     "Array/iteratee+inline"
     Iteratee_Prototype.(fun () -> 
       let rec it i cont a =
-	continue cont None it ((+) i a)
+	continue cont None it (operation i a)
       in
       Array.enum int_array (fun _ a -> a) it 0
     );
   profile_case "Array/modular-fold"
     ModularIteratee_Prototype.(fun () -> 
       let rec it cont a i = 
-	Fold.continue cont it ((+) a i)
+	Fold.continue cont it (operation a i)
       in
       Array.fold it 0 int_array
     );
-  profile_case "Array/unpuree"
-    UnpureIteratee_Prototype.(fun () ->
-      enum_array int_array (XCont (ref 0, 
-				   (fun s -> ref !s),
-				   (fun s i cont -> 
-				     s := (+) !s i;
-				     cont),
-				   (!))) |>
-	  run cont_with_result ignore ignore
-    );
-  profile_case "Array/unpuree-2"
-    UnpureIteratee_Prototype.(fun () ->
-      enum_array' int_array (XCont (ref 0,
-				    (fun s -> ref !s),
-				    (fun s i cont ->
-				      s := (+) !s i;
-				      cont),
-				    (!))) |>
-	  run cont_with_result ignore ignore
-    );
+  (* profile_case "Array/unpuree" *)
+  (*   UnpureIteratee_Prototype.(fun () -> *)
+  (*     enum_array int_array (XCont (ref 0,  *)
+  (* 				   (fun s -> ref !s), *)
+  (* 				   (fun s i cont ->  *)
+  (* 				     s := operation !s i; *)
+  (* 				     cont), *)
+  (* 				   (!))) |> *)
+  (* 	  run cont_with_result ignore ignore *)
+  (*   ); *)
+  (* profile_case "Array/unpuree-2" *)
+  (*   UnpureIteratee_Prototype.(fun () -> *)
+  (*     enum_array' int_array (XCont (ref 0, *)
+  (* 				    (fun s -> ref !s), *)
+  (* 				    (fun s i cont -> *)
+  (* 				      s := operation !s i; *)
+  (* 				      cont), *)
+  (* 				    (!))) |> *)
+  (* 	  run cont_with_result ignore ignore *)
+  (*   ); *)
+  profile_case "Array/unpuree+fold"
+    Unpuree_Prototype.(fun () ->
+      execute
+	~source:(enum_array int_array)
+	~query:(fold operation 0)
+	~on_done:cont_with_result
+	());
+  profile_case "Array/unpuree+inline"
+    Unpuree_Prototype.(fun () ->
+      let it =
+	SRecur {
+	  s=ref 0;
+	  cp=(fun s -> s);
+	  ex=(!);
+	  k=fun st el done_k recur ->
+	    st := operation !st el;
+	    recur
+	}
+      in
+      execute
+	~source:(enum_array int_array)
+	~query:it
+	~on_done:cont_with_result
+	());
   ()
 
 let profile_list =
@@ -163,31 +187,31 @@ let profile_list =
     (fun () -> 
       let rec loop sum = function
 	| [] -> sum
-	| a::rest -> loop ((+) a sum) rest
+	| a::rest -> loop (operation a sum) rest
       in
       loop 0 int_list |> cont_with_result
     );
   profile_case
     "List/fold_left"
     (fun () ->
-      List.fold_left (+) 0 int_list |> cont_with_result
+      List.fold_left operation 0 int_list |> cont_with_result
     );
   profile_case
     "List/sequence"
     Seq_Prototype.(fun () ->
       let seq = from_list int_list in
-      fold (+) 0 seq |> cont_with_result
+      fold operation 0 seq |> cont_with_result
     );
   profile_case
     "List/enum+fold"
     Enumee_Prototype.(fun () ->
-      list_enum int_list 0 (fold (+)) |> cont_with_result
+      list_enum int_list 0 (fold operation) |> cont_with_result
     );
   profile_case
     "List/s-enum+inline"
     SEnumee_Prototype.(fun () ->
       (list_enum int_list 0 (let rec it a m b cont =
-			       cont m ((+) a b) it
+			       cont m (operation a b) it
 			     in
 			     it) |> cont_with_result)
     );
@@ -195,41 +219,49 @@ let profile_list =
     "List/iteratee+inline"
     Iteratee_Prototype.(fun () ->
       let rec it i cont a =
-	continue cont None it ((+) i a)
+	continue cont None it (operation i a)
       in
       Array.enum int_array (fun _ a -> a) it 0
     );
-  profile_case
-    "List/unpuree"
-    UnpureIteratee_Prototype.(fun () ->
-      enum_list int_list (XCont (ref 0,
-				 (fun s -> ref !s),
-				 (fun s i it ->
-				   s := (+) !s i;
-				   it),
-				 (!))) |>
-	  run cont_with_result ignore ignore;
-    );
-  profile_case
-    "List/unpuree-fold"
-    UnpureIteratee_Prototype.(fun () ->
-      enum_list' int_list (XCont (ref 0,
-				  (fun s -> ref !s),
-				  (fun s i it ->
-				    s := (+) !s i;
-				    it),
-				  (!))) |>
-	  run cont_with_result ignore ignore
-    );
+  (* profile_case *)
+  (*   "List/unpureit" *)
+  (*   UnpureIteratee_Prototype.(fun () -> *)
+  (*     enum_list int_list (XCont (ref 0, *)
+  (* 				 (fun s -> ref !s), *)
+  (* 				 (fun s i it -> *)
+  (* 				   s := operation !s i; *)
+  (* 				   it), *)
+  (* 				 (!))) |> *)
+  (* 	  run cont_with_result ignore ignore; *)
+  (*   ); *)
+  (* profile_case *)
+  (*   "List/unpureit-fold" *)
+  (*   UnpureIteratee_Prototype.(fun () -> *)
+  (*     enum_list' int_list (XCont (ref 0, *)
+  (* 				  (fun s -> ref !s), *)
+  (* 				  (fun s i it -> *)
+  (* 				    s := operation !s i; *)
+  (* 				    it), *)
+  (* 				  (!))) |> *)
+  (* 	  run cont_with_result ignore ignore *)
+  (*   ); *)
+  (* profile_case *)
+  (*   "List/unpureit-from-fold" *)
+  (*   UnpureIteratee_Prototype.(fun () -> *)
+  (*     enum_from_foldl List.fold_left int_list (XCont (ref 0, *)
+  (* 						      (fun s -> ref !s), *)
+  (* 						      (fun s i it -> *)
+  (* 							s := operation !s i; *)
+  (* 							it), *)
+  (* 						      (!))) |> *)
+  (* 	  run cont_with_result ignore ignore *)
+  (*   ); *)
   profile_case
     "List/unpuree-from-fold"
-    UnpureIteratee_Prototype.(fun () ->
-      enum_from_foldl List.fold_left int_list (XCont (ref 0,
-						      (fun s -> ref !s),
-						      (fun s i it ->
-							s := (+) !s i;
-							it),
-						      (!))) |>
-	  run cont_with_result ignore ignore
-    );
+    Unpuree_Prototype.(fun () ->
+      execute
+	~source:(enum_list int_list)
+	~query:(fold operation 0)
+	~on_done:cont_with_result
+	());
   ()

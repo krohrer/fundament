@@ -159,13 +159,29 @@ let rec enum_list list it =
     | Recur {k} as it		-> enum_list rest (k x return it)
     | SRecur {s;k;_} as it	-> enum_list rest (k s x return it)
     | Done _
-    | Error _ as it	-> it
+    | Error _ as it		-> it
+
+let rec enum_array' arr i n it =
+  let i = i + 1 in
+  if i < n then
+    match it with 
+    | Cont k			-> enum_array' arr i n (k arr.(i))
+    | Recur {k} as it		-> enum_array' arr i n (k arr.(i) return it)
+    | SRecur {s;k;_} as it	-> enum_array' arr i n (k s arr.(i) return it)
+    | Done _
+    | Error _ as it		-> it
+  else
+    it
+  
+let enum_array arr it =
+  enum_array' arr (-1) (Array.length arr) it
 
 (*__________________________________________________________________________*)
 
-let fold f a = 
+
+let fold1 f = 
   let k el =
-    let s = ref (f a el)
+    let s = ref el
     and cp s = ref !s
     and ex s = !s
     and k s el _ recur =
@@ -175,6 +191,19 @@ let fold f a =
     SRecur {s;cp;ex;k}
   in
   Cont k
+
+(*__________________________________________________________________________*)
+
+let fold f a =
+  let s = ref a
+  and cp s = ref !s
+  and ex s = !s
+  and k s x _ recur =
+    s := f !s x;
+    recur
+  in
+  SRecur {s;cp;ex;k}
+  
 
 (*__________________________________________________________________________*)
 
@@ -225,7 +254,7 @@ let _ =
 let _ =
   execute
     ~source:(enum_list l >>> enum_list (List.rev l))
-    ~query:(@@ to_list)
+    ~query:(map float @@ to_list)
     ~on_done:id
     ()
 
