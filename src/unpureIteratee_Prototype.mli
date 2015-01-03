@@ -9,6 +9,7 @@ type (_,_,_) t =
   | Warning	: exn * 't				-> (( _, _, _) t as 't)
 
 type ('i,'a,'b) enumerator = ('i,'a,'b) t -> ('i,'a,'b) t
+type ('i,'eli,'elo,'a) enumeratee = (('i,'eli,'a) t as 't) -> ('i,'elo,'t) t
 
 (*__________________________________________________________________________*)
 
@@ -22,11 +23,16 @@ val enumi_string	: string	-> (int,char,_) enumerator
 val enumi_list		: 'a list	-> (int,'a,_) enumerator
 val enumi_array		: 'a array	-> (int,'a,_) enumerator
 
-val enum_from_foldl	: (('t->'b->'t)->'t->'c->'t) -> 'c -> 't -> ((_,'b,_) t as 't)
+(* val enum_from_foldl	: (('t->'b->'t)->'t->'c->'t) -> 'c -> 't -> ((_,'b,_) t as 't) *)
+val enum_from_foldl : (('a -> 'b -> 'a) -> 'a -> 'c -> 'a) -> 't -> ((_,'b,_) t as 't)
 
 val enum_hashtbl : ('k,'v) Hashtbl.t -> ('k,'v,_) enumerator
 
+val filter : ('e->bool) -> (_,'e,'e,'a) enumeratee
+val filteri : ('i->'e->bool) -> ('i,'e,'e,'a) enumeratee
+
 val run : ('o -> 'r) -> (exn -> 'r) -> ('t -> 'r) -> ((_,_,'o) t as 't) -> 'r
+val (||.) : (('a,'b,'c) t -> 'r) -> ('a,'b,('d,'e,'c) t) t -> 'r
 
 (*__________________________________________________________________________*)
 
@@ -63,3 +69,10 @@ val getchar : (_,char,char) t
 
 val getline : (_,char,string) t
 
+(*__________________________________________________________________________*)
+
+(* It turns out iteratees form a monad *)
+
+val return : 'b -> (_,_,'b) t 
+(* val bind : (_,'a,'b) t -> ('b -> 't) -> ((_,'a,'c) t as 't) *)
+(* val bind : (_,'a,'b) t -> ('b -> ('i,'a,'c) t) -> ('i,'a,'c) t *)

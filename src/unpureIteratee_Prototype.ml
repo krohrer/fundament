@@ -12,7 +12,7 @@ type ('i,'a,'b) enumerator = ('i,'a,'b) t -> ('i,'a,'b) t
 
 (*__________________________________________________________________________*)
 
-let run succ_k err_k part_k = function
+let rec run succ_k err_k part_k = function
   | Done o		-> succ_k o
   | Cont _
   | ICont _
@@ -22,7 +22,7 @@ let run succ_k err_k part_k = function
   | Error x		-> err_k x
   | Warning (x,_)	-> err_k x
 
-let copy = function
+let rec copy = function
   | SCont (s,c,k)	-> SCont (c s,c,k)
   | RCont (s,c,k)	-> RCont (c s,c,k)
   | XCont (s,c,k,f)	-> XCont (c s,c,k,f)
@@ -122,6 +122,27 @@ let ifoldx cell i x = function
   | Done _
   | Error _
   | Warning _ as it		-> cell := it; raise Exit
+
+(*__________________________________________________________________________*)
+
+(* It turns out iteratees form a monad *)
+
+let return o = Done o
+
+(* This is not very efficient because we allocate a lot. Can we
+   somehow chain this better? Maybe by explicitly passing a
+   continuation for the done case around? *)
+
+(* let rec bind : type b c . (_,'a,b) t -> (b -> ('i,'a,c) t) -> ('i,'a,c) t = fun it itf -> *)
+(*   match it with *)
+(*   | Done o		-> itf o *)
+(*   | Cont k		-> let k x = bind (k x) itf in Cont k *)
+(*   | ICont k		-> let k i x = bind (k i x) itf in ICont k *)
+(*   | SCont (s,c,k)	-> let k s x = bind (k s x) itf in SCont (s,c,k) *)
+(*   | RCont (s,c,k) as r	-> let k s x _ = bind (k s x r) itf in RCont (s,c,k) *)
+(*   | XCont (s,c,k,e) as r-> let k s x _ = bind (k s x r) itf in XCont (s,c,k,e) *)
+(*   | Error exn		-> Error exn *)
+(*   | Warning (exn,itf)	-> Error exn *)
 
 (*__________________________________________________________________________*)
 
@@ -226,5 +247,4 @@ let getline =
     it b c (XCont (b, copy, it, Buffer.contents)))
 
 (*__________________________________________________________________________*)
-
 
