@@ -2,13 +2,15 @@ type (_,_,_) t =
   | Done	: 'b					-> ( _, _,'b) t
   | Cont	: ('a->'t)				-> (('i,'a,'b) t as 't)
   | ICont	: ('i->'a->'t)				-> (('i,'a,'b) t as 't)
-  | SCont	: 's * ('s->'a->'t)			-> (('i,'a,'b) t as 't)
-  | RCont	: 's * ('s->'a->'t->'t)			-> (('i,'a,'b) t as 't)
-  | XCont	: 's * ('s->'a->'t->'t) * ('s->'b)	-> (('i,'a,'b) t as 't)
+  | SCont	: 's * ('s -> 's) * ('s->'a->'t)	-> (('i,'a,'b) t as 't)
+  | RCont	: 's * ('s -> 's) * ('s->'a->'t->'t)	-> (('i,'a,'b) t as 't)
+  | XCont	: 's * ('s -> 's) * ('s->'a->'t->'t) * ('s->'b)	-> (('i,'a,'b) t as 't)
   | Error	: exn					-> ( _, _, _) t
   | Warning	: exn * 't				-> (( _, _, _) t as 't)
 
 type ('i,'a,'b) enumerator = ('i,'a,'b) t -> ('i,'a,'b) t
+
+(*__________________________________________________________________________*)
 
 let run succ_k err_k part_k = function
   | Done o		-> succ_k o
@@ -16,72 +18,116 @@ let run succ_k err_k part_k = function
   | ICont _
   | SCont _
   | RCont _ as it	-> part_k it
-  | XCont (s,_,extract)	-> succ_k (extract s)
+  | XCont (s,_,_,f)	-> succ_k (f s)
   | Error x		-> err_k x
   | Warning (x,_)	-> err_k x
 
-let copy it = failwith "TODO"
+let copy = function
+  | SCont (s,c,k)	-> SCont (c s,c,k)
+  | RCont (s,c,k)	-> RCont (c s,c,k)
+  | XCont (s,c,k,f)	-> XCont (c s,c,k,f)
+  | Done _
+  | Cont _
+  | ICont _
+  | Error _
+  | Warning _ as it	-> it
+
+let continue f x = function
+  | Cont k			-> f (k x)
+  | SCont (s,_,k)		-> f (k s x)
+  | RCont (s,_,k) as r		-> f (k s x r)
+  | XCont (s,_,k,_) as r	-> f (k s x r)
+  | Done _
+  | Error _
+  | ICont _
+  | Warning _ as it		-> it
 
 let continue1 f a x = function
-  | Cont k		-> f a (k x)
-  | SCont (s,k)		-> f a (k s x)
-  | RCont (s,k) as r	-> f a (k s x r)
-  | XCont (s,k,_) as r	-> f a (k s x r)
-  | it			-> it
+  | Cont k			-> f a (k x)
+  | SCont (s,_,k)		-> f a (k s x)
+  | RCont (s,_,k) as r		-> f a (k s x r)
+  | XCont (s,_,k,_) as r	-> f a (k s x r)
+  | Done _
+  | Error _
+  | ICont _
+  | Warning _ as it		-> it
 
 let continue2 f a b x = function
-  | Cont k		-> f a b (k x)
-  | SCont (s,k)		-> f a b (k s x)
-  | RCont (s,k)	as r	-> f a b (k s x r)
-  | XCont (s,k,_) as r	-> f a b (k s x r)
-  | it			-> it
+  | Cont k			-> f a b (k x)
+  | SCont (s,_,k)		-> f a b (k s x)
+  | RCont (s,_,k)	as r	-> f a b (k s x r)
+  | XCont (s,_,k,_) as r	-> f a b (k s x r)
+  | Done _
+  | Error _
+  | ICont _
+  | Warning _ as it		-> it
 
 let continue3 f a b c x = function
-  | Cont k		-> f a b c (k x)
-  | SCont (s,k)		-> f a b c (k s x)
-  | RCont (s,k) as r	-> f a b c (k s x r)
-  | XCont (s,k,_) as r	-> f a b c (k s x r)
-  | it			-> it
+  | Cont k			-> f a b c (k x)
+  | SCont (s,_,k)		-> f a b c (k s x)
+  | RCont (s,_,k) as r		-> f a b c (k s x r)
+  | XCont (s,_,k,_) as r	-> f a b c (k s x r)
+  | Done _
+  | Error _
+  | ICont _
+  | Warning _ as it		-> it
 
 let icontinue1 f i x = function
-  | Cont k		-> f i (k x)
-  | ICont k		-> f i (k i x)
-  | SCont (s,k)		-> f i (k s x)
-  | RCont (s,k) as r	-> f i (k s x r)
-  | XCont (s,k,_) as r	-> f i (k s x r)
-  | it			-> it
+  | Cont k			-> f i (k x)
+  | ICont k			-> f i (k i x)
+  | SCont (s,_,k)		-> f i (k s x)
+  | RCont (s,_,k) as r		-> f i (k s x r)
+  | XCont (s,_,k,_) as r	-> f i (k s x r)
+  | Done _
+  | Error _
+  | Warning _ as it		-> it
 
 let icontinue2 f i a x = function
-  | Cont k		-> f i a (k x)
-  | ICont k		-> f i a (k i x)
-  | SCont (s,k)		-> f i a (k s x)
-  | RCont (s,k)	as r	-> f i a (k s x r)
-  | XCont (s,k,_) as r	-> f i a (k s x r)
-  | it			-> it
+  | Cont k			-> f i a (k x)
+  | ICont k			-> f i a (k i x)
+  | SCont (s,_,k)		-> f i a (k s x)
+  | RCont (s,_,k) as r		-> f i a (k s x r)
+  | XCont (s,_,k,_) as r	-> f i a (k s x r)
+  | Done _
+  | Error _
+  | Warning _ as it		-> it
 
 let icontinue3 f i a b x = function
-  | Cont k		-> f i a b (k x)
-  | ICont k		-> f i a b (k i x)
-  | SCont (s,k)		-> f i a b (k s x)
-  | RCont (s,k) as r	-> f i a b (k s x r)
-  | XCont (s,k,_) as r	-> f i a b (k s x r)
-  | it			-> it
+  | Cont k			-> f i a b (k x)
+  | ICont k			-> f i a b (k i x)
+  | SCont (s,_,k)		-> f i a b (k s x)
+  | RCont (s,_,k) as r		-> f i a b (k s x r)
+  | XCont (s,_,k,_) as r	-> f i a b (k s x r)
+  | Done _
+  | Error _
+  | Warning _ as it		-> it
 
 let foldx cell it x =
   match it with
-  | Cont k		-> k x
-  | SCont (s,k)		-> k s x
-  | RCont (s,k) as r	-> k s x r
-  | XCont (s,k,_) as r	-> k s x r
-  | it			-> cell := it; raise Exit
+  | Cont k			-> k x
+  | SCont (s,_,k)		-> k s x
+  | RCont (s,_,k) as r		-> k s x r
+  | XCont (s,_,k,_) as r	-> k s x r
+  | Done _
+  | Error _
+  | ICont _
+  | Warning _ as it		-> cell := it; raise Exit
 
 let ifoldx cell i x = function
-  | Cont k		-> k x
-  | ICont k		-> k i x
-  | SCont (s,k)		-> k s x
-  | RCont (s,k) as r	-> k s x r
-  | XCont (s,k,_) as r	-> k s x r
-  | it			-> cell := it; raise Exit
+  | Cont k			-> k x
+  | ICont k			-> k i x
+  | SCont (s,_,k)		-> k s x
+  | RCont (s,_,k) as r		-> k s x r
+  | XCont (s,_,k,_) as r	-> k s x r
+  | Done _
+  | Error _
+  | Warning _ as it		-> cell := it; raise Exit
+
+(*__________________________________________________________________________*)
+
+let enum_from_foldl foldl cont it =
+  let cell = ref it in
+  try foldl (foldx cell) it cont with Exit -> !cell
 
 let enum_string =
   let rec loop str i n it = 
@@ -110,6 +156,16 @@ let enum_array =
     let i = i + 1 in
     if i < n then
       continue3 loop arr i n arr.(i) it
+    else
+      it
+  in
+  fun arr it -> loop arr (-1) (Array.length arr) it
+
+let enum_array' =
+  let rec loop arr i n it =
+    let i = i + 1 in
+    if i < n then
+      continue (loop arr i n) arr.(i) it
     else
       it
   in
@@ -147,6 +203,8 @@ let enum_hashtbl tbl it =
     let cell = ref it in
     try Hashtbl.fold (ifoldx cell) tbl it with Exit -> !cell
 
+(*__________________________________________________________________________*)
+
 let getchar = Cont (fun c -> Done c)
 
 let getline =
@@ -158,6 +216,15 @@ let getline =
       recur
     )
   in
+  let copy b =
+    let b' = Buffer.create 80 in
+    Buffer.add_buffer b' b;
+    b'
+  in
   Cont (fun c ->
     let b = Buffer.create 80 in
-    it b c (XCont (b, it, Buffer.contents)))
+    it b c (XCont (b, copy, it, Buffer.contents)))
+
+(*__________________________________________________________________________*)
+
+

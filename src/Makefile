@@ -1,4 +1,4 @@
-default: prof-it
+default: it-proto
 
 dynamometer:
 	ocamlbuild dynamometer.native
@@ -9,9 +9,9 @@ prof-it:
 	@echo "Make: Compilation done. Starting profile..."
 	./profileIteratee.native
 
-modit-proto:
-	ocamlbuild modularIteratee_Prototype.native
-	./modularIteratee_Prototype.native
+it-proto:
+	ocamlbuild unpuree_Prototype.native
+	./unpuree_Prototype.native
 
 pp-proto:
 	ocamlbuild prettyPrinting_Prototype.native

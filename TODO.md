@@ -11,6 +11,11 @@
       iteratee.
 	* Not sure about the parsing yet.
 	
+## Prerequisites
+
+I use embedded records in (G)ADTs, so OCaml 4.03 will be needed. Just
+do an opam switch to the latest (development) version
+	
 ## Pinboard
 
 - Development for new features should go like this:

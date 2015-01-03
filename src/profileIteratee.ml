@@ -137,12 +137,22 @@ let profile_array =
     );
   profile_case "Array/unpuree"
     UnpureIteratee_Prototype.(fun () ->
-      let sum = ref 0 in
-      enum_array int_array (XCont (sum, 
+      enum_array int_array (XCont (ref 0, 
+				   (fun s -> ref !s),
 				   (fun s i cont -> 
 				     s := (+) !s i;
 				     cont),
 				   (!))) |>
+	  run cont_with_result ignore ignore
+    );
+  profile_case "Array/unpuree-2"
+    UnpureIteratee_Prototype.(fun () ->
+      enum_array' int_array (XCont (ref 0,
+				    (fun s -> ref !s),
+				    (fun s i cont ->
+				      s := (+) !s i;
+				      cont),
+				    (!))) |>
 	  run cont_with_result ignore ignore
     );
   ()
@@ -192,12 +202,34 @@ let profile_list =
   profile_case
     "List/unpuree"
     UnpureIteratee_Prototype.(fun () ->
-      let sum = ref 0 in
-      enum_list int_list (XCont (sum,
+      enum_list int_list (XCont (ref 0,
+				 (fun s -> ref !s),
 				 (fun s i it ->
 				   s := (+) !s i;
 				   it),
 				 (!))) |>
 	  run cont_with_result ignore ignore;
+    );
+  profile_case
+    "List/unpuree-fold"
+    UnpureIteratee_Prototype.(fun () ->
+      enum_list' int_list (XCont (ref 0,
+				  (fun s -> ref !s),
+				  (fun s i it ->
+				    s := (+) !s i;
+				    it),
+				  (!))) |>
+	  run cont_with_result ignore ignore
+    );
+  profile_case
+    "List/unpuree-from-fold"
+    UnpureIteratee_Prototype.(fun () ->
+      enum_from_foldl List.fold_left int_list (XCont (ref 0,
+						      (fun s -> ref !s),
+						      (fun s i it ->
+							s := (+) !s i;
+							it),
+						      (!))) |>
+	  run cont_with_result ignore ignore
     );
   ()
