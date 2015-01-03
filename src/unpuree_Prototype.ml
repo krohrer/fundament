@@ -15,7 +15,13 @@ type (_,_) t =
   | Error :
       exn			-> ( _, _) t
 
+type ('el,'out) enumerator = ('el,'out) t -> ('el,'out) t
+
 (*__________________________________________________________________________*)
+
+let (>>>) e1 e2 = fun it -> e2 (e1 it)
+
+exception Divergence
 
 let rec run done_k err_k cont_k = function
   | Done o			-> done_k o
@@ -159,7 +165,7 @@ let rec enum_list list it =
 
 let fold f a = 
   let k el =
-    let s = ref a
+    let s = ref (f a el)
     and cp s = ref !s
     and ex s = !s
     and k s el _ recur =
@@ -183,3 +189,55 @@ let iter f =
 	recur}
   in
   Cont k
+
+(*__________________________________________________________________________*)
+
+let execute
+    ~source
+    ~query
+    ~on_done
+    ?(on_err=raise)
+    ?(on_div=fun _ -> raise Divergence)
+    ()
+    =
+  run on_done on_err on_div @@ source @@ query
+
+(*__________________________________________________________________________*)
+
+let l =
+  let rec gen n l =
+    if 0 < n then
+      gen (n-1) (n::l)
+    else
+      l
+  in
+  gen 10 []
+
+(* Multistaged transformations *)
+let _ = 
+  run (Printf.printf "Result = %f\n%!") raise ignore
+  @@ enum_list l
+  @@ filter (fun i -> i mod 2 = 0)
+  @@ map float
+  @@ fold (+.) 0.
+
+(* A query language using iteratees *)
+let _ =
+  execute
+    ~source:(enum_list l >>> enum_list (List.rev l))
+    ~query:(@@ to_list)
+    ~on_done:id
+    ()
+
+(* Divergence *)
+let _ =
+  try
+    execute
+      ~on_done:id
+      ~source:id
+      ~query:(Cont (fun e -> return e))
+      ()
+  with
+    Divergence -> Printf.eprintf "Divergent iteratee was expected here.\n%!"
+      
+(* From *)

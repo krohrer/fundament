@@ -15,8 +15,7 @@ type (_,_) t =
   | Error :
       exn			-> ( _, _) t
 
-(* type ('el,'out) enumerator = ('el,'out) t -> ('el,'out) t *)
-(* type ('eli,'elo,'out) enumeratee = ('eli,'out) t -> ('elo,('eli,'out) t) t *)
+type ('el,'out) enumerator = ('el,'out) t -> ('el,'out) t
 
 (*__________________________________________________________________________*)
 
@@ -29,6 +28,7 @@ val filter_map	: ('e->'f option) -> ('f,'out) t -> ('e,'out) t
 val fold	: ('a -> 'e -> 'a) -> 'a -> ('e,'a) t
 val iter	: ('e -> unit) -> ('e,unit) t
 
+exception Divergence
 val run : ('o -> 'r) -> (exn -> 'r) -> ('t -> 'r) -> ((_,'o) t as 't) -> 'r
 
 val enum_list : 'a list -> ('a,'b) t -> ('a,'b) t
@@ -37,5 +37,15 @@ val to_list : ('a,'a list) t
 
 (*__________________________________________________________________________*)
 
-val copy : 't -> ((_,_) t as 't)
+val execute :
+  source:('el, 'out) enumerator ->
+  query:('el,'out) t ->
+  on_done:('out -> 'r) ->
+  ?on_err:(exn -> 'r) ->
+  ?on_div:(('el, 'out) t -> 'r) ->
+  unit -> 'r
+
+(*__________________________________________________________________________*)
+
+(* val copy : 't -> ((_,_) t as 't) *)
 
