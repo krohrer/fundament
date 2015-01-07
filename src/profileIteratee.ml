@@ -1,12 +1,12 @@
 let times = 10
-let n = 1000000
+let n = 1000*1000
 let burn_cycles = 10
 let operation = (+)
-let operation a b =
-  for i = 0 to burn_cycles do
-    ignore (a + b)
-  done
-  ;a + b
+(* let operation a b = *)
+(*   for i = 0 to burn_cycles do *)
+(*     ignore (a + b) *)
+(*   done *)
+(*   ;a + b *)
 
 let profile_case label thunk = Profiler.(
   profile ~times default thunk |> print_stats Format.std_formatter label
@@ -256,6 +256,24 @@ let profile_list =
   (* 						      (!))) |> *)
   (* 	  run cont_with_result ignore ignore *)
   (*   ); *)
+  profile_case
+    "List/unpuree+inline"
+    Unpuree_Prototype.(fun () ->
+      let it =
+	SRecur {
+	  s=ref 0;
+	  cp=(fun s -> s);
+	  ex=(!);
+	  k=fun st el done_k recur ->
+	    st := operation !st el;
+	    recur
+	}
+      in
+      execute
+	~source:(enum_list int_list)
+	~query:it
+	~on_done:cont_with_result
+	());
   profile_case
     "List/unpuree-from-fold"
     Unpuree_Prototype.(fun () ->

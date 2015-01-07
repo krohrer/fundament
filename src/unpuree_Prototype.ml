@@ -4,9 +4,9 @@ type (_,_) t =
   | Cont :
       ('el->('el,'out) t)	-> ('el,'out) t
   | Recur : {
-    k	: 't . 'el->('out->'t)->'t->'t
+    k	: 't . 'el->('out->'t)->'t->'t;
   }				-> ('el,'out) t
-  | SRecur	: {
+  | SRecur : {
     s	: 's;
     cp	: 's->'s;
     ex	: 's->'out;
@@ -51,21 +51,39 @@ let copy = function
 
 let rec map f = function
   | Cont k		-> Cont (fun e -> map f (k (f e)))
+
   | SRecur {s;cp;ex;k}	-> let k s el done_k recur =
 			     k s (f el) done_k recur
 			   in
 			   SRecur {s=cp s;cp;ex;k}
+
   | Recur {k}		-> let k el done_k recur =
 			     k (f el) done_k recur
 			   in
 			   Recur {k}
+
   | Error _
   | Done _ as it	-> it  
 
 (*__________________________________________________________________________*)
 
+(* Does not work, see issues/escapingTypes.ml *)
+let filter_srecur_k pred k =
+  fun s el done_k recur ->
+    if pred el then
+      k s el done_k recur
+    else
+      recur
+
 let rec filter pred = function
-  | Cont k as it	-> Cont (filter_cont_k pred k it)
+  | Cont k as it	-> let k el =
+			     if pred el then
+			       filter pred (k el)
+			     else
+			       filter pred it
+			   in
+			   Cont k
+
   | SRecur {s;cp;ex;k}	-> let k s el done_k recur =
 			     if pred el then
 			       k s el done_k recur
@@ -73,65 +91,45 @@ let rec filter pred = function
 			       recur
 			   in
 			   SRecur {s=cp s;cp;ex;k}
-  (* This does not work because the type of the state variable would
-     escape. But if we inline the function as seen above it works. Is
-     this a bug or a restriction in OCaml? *)
-  (* | SRecur (s,cp,ex,k)	-> SRecur (cp s,cp,ex, filter_unpure_k pred k) *)
+
   | Recur {k}		-> let k el done_k recur =
-			     if pred el then
-			       k el done_k recur
-			     else
-			       recur
-			   in
-			     Recur {k}
+  			     if pred el then
+  			       k el done_k recur
+  			     else
+  			       recur
+  			   in
+  			   Recur {k}
+
   | Error _
   | Done _ as it	-> it
-
-and filter_cont_k pred k it =
-  fun el ->
-    if pred el then
-      filter pred (k el)
-    else
-      filter pred it
-
-let filter_unpure_k : type s . ('e->bool) -> (s->'el->('out->'t)->'t->'t) -> (s->'el->('out->'t)->'t->'t) = fun pred k ->
-  let k' : s -> 'el -> ('out->'t) -> 't -> 't = fun s el done_k recur ->
-    if pred el then
-      k s el done_k recur
-    else
-      recur
-  in
-  k'
 
 (*__________________________________________________________________________*)
 
 let rec filter_map f = function
 (* : type e f. (e->f option) -> (f,'out) t -> (e,'out) t = fun f -> function *)
-  | Cont k as it	-> Cont (filter_map_cont_k f k it)
+  | Cont k as it	-> let k el =
+			     match f el with
+			     | None	-> filter_map f it
+			     | Some el' -> filter_map f (k el')
+			   in
+			   Cont k
 
   | SRecur {s;cp;ex;k}	-> let k s el done_k recur =
 			     match f el with
 			     | Some el' -> k s el' done_k recur
-			     | None -> recur
+			     | None	-> recur
 			   in
 			   SRecur {s=cp s;cp;ex;k}
 
-  | Recur {k}		-> let k el done_k recur =
+  | Recur {k}				-> let k el done_k recur =
 			     match f el with
 			     | Some el' -> k el' done_k recur
-			     | None -> recur
+			     | None	-> recur
 			   in
 			   Recur {k}
 
   | Error _
   | Done _ as it	-> it
-
-and filter_map_cont_k f k it =
-(* : type e f. (e -> f option) -> (f -> (f,'out) t) -> (f,'out) t -> e -> (e,'out) t = fun f k it -> *)
-  fun el ->
-    match f el with
-    | None -> filter_map f it
-    | Some el' -> filter_map f (k el')
 
 (*__________________________________________________________________________*)
 
@@ -269,4 +267,3 @@ let _ =
   with
     Divergence -> Printf.eprintf "Divergent iteratee was expected here.\n%!"
       
-(* From *)

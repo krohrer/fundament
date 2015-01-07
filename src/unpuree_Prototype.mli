@@ -1,17 +1,21 @@
 type (_,_) t = 
   | Done :
       'out			->  ( _,'out) t
+
   | Cont :
       ('el->('el,'out) t)	-> ('el,'out) t
+
   | Recur : {
     k	: 't . 'el->('out->'t)->'t->'t
   }				-> ('el,'out) t
-  | SRecur	: {
+
+  | SRecur : {
     s	: 's;
     cp	: 's->'s;
     ex	: 's->'out;
     k	: 't . 's->'el->('out->'t)->'t->'t 
   }				-> ('el,'out) t
+
   | Error :
       exn			-> ( _, _) t
 
