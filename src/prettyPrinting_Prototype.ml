@@ -19,11 +19,12 @@
 
 module type StandardFormat_Sig =
   sig
-    val formatter : Format.formatter
+    type t = Format.formatter -> unit
   end
 
 module type AesqFormat_Sig =
   sig
+    type t
   end
 
 module AesqFormat :
@@ -44,11 +45,14 @@ module StandardFormat :
     module type S = StandardFormat_Sig
   end
 
-(* Markdown writer *)
+(* Markdown writer, an example of an iteratee based pretty printer *)
 (*__________________________________________________________________________*)
 
 module type MarkdownWriter_Sig =
   sig
+    type t 
+
+
   end
 
 module MarkdownWriter :
@@ -60,29 +64,48 @@ module MarkdownWriter :
   =
   struct
     module type S = MarkdownWriter_Sig
-    module FromStandardFormat(F : StandardFormat.S) = struct end
-    module FromAesqFormat(F : AesqFormat.S) = struct end
+    module FromStandardFormat(F : StandardFormat.S) = struct type t = F.t end
+    module FromAesqFormat(F : AesqFormat.S) = struct type t = F.t end
   end
 
 (* Article writer *)
 (*__________________________________________________________________________*)
 
+type contributor = string
+
+module type ArticleWriter_Sig =
+  sig
+    type t
+    type 'a elem
+
+    val str : string -> [`text] elem
+    val int : int -> [`text] elem
+    val p : [`text] elem list -> [`paragraph] elem
+
+    val article :
+      title:[`text] elem ->
+      authors:contributor list ->
+      abstract:[`text] elem list ->
+      [`paragraph] elem list -> t
+  end
+
 module ArticleWriter :
   sig
-    module type S =
-      sig
-      end
+    module type S = ArticleWriter_Sig
 
-    module FromMarkdown(W : MarkdownWriter.S) () : S
+    module WithMarkdown (W : MarkdownWriter.S) : S with type t = W.t
   end
   =
   struct
-    module type S =
-      sig
-      end
+    module type S = ArticleWriter_Sig
 
-    module FromMarkdown(W : MarkdownWriter_Sig) () =
+    module WithMarkdown (W : MarkdownWriter.S) =
       struct
+	type t = W.t
+	type 'a elem =
+	  | Str : string -> [`text] elem
+	  | Int : int -> [`text] elem
+	  | P : [`text] elem list -> [`paragraph] elem
       end
   end
 
@@ -92,34 +115,17 @@ module ArticleWriter :
    composable values. 
    
 *)
-(*__________________________________________________________________________*)
 
-module Iteratees_1 (W : ArticleWriter.S) () :
-  sig
-
-  end
-  =
-  struct
-
-  end
-
-(* Graveyard, remnants of the past *)
-(*__________________________________________________________________________*)
-
-(* Writers need to be iteratee based! Composable iteratees a must!
-
-   How can we work with the Iteratee module? *)
-
-module Test :
-  sig
-    (* val dup : ('i,'o,'a) Iteratee.t -> ('i,'o,'a) Iteratee.t *)
-  end
-  =
-  struct
-  end
-
-module F () =
-  struct
-    let _ = print_endline "F ()"
-  end
-
+let iteratee_article writer =
+  let module W = (val writer : ArticleWriter.S) in W.(
+    article
+      ~title:"Hello world"
+      ~author:"Kaspar M. Rohrer"
+      ~abstract:[
+	
+      ]
+      [
+	
+      ]
+  )
+  

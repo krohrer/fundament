@@ -1,4 +1,4 @@
-default: prof-it
+default: pp-proto
 
 dynamometer:
 	ocamlbuild dynamometer.native
