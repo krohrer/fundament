@@ -13,10 +13,38 @@
 	
 ## Prerequisites
 
-I use embedded records in (G)ADTs, so OCaml 4.03 will be needed. Just
-do an opam switch to the latest (development) version
+I use embedded records and (G)ADTs, so OCaml 4.03 will be needed (for
+the records). Just do an opam switch to the latest (development)
+version.
 	
 ## Pinboard
+
+- Write Dynamometer library with current interface
+  * finish DSL
+  * pretty printing as a functor!
+
+- Enumee -> Iteratee!
+  - Semantics of composition / operators.
+- Finalize Unpuree
+  - Decide on a less obnoxiuous name
+  - Write unit tests and examples
+
+- Finalize interatee interface and operators (See Unpuree)
+  - [X] Avoid closures as it allocates on the heap.
+	  - [X] At the cost of mutable style
+  - [X] Use continuation passing style.
+  - [X] Semantics of concatenation/composition?
+	  - [X] Monadic operations
+	  - [X] Higher-order operations (map,fold,filter,iter)
+	  - [X] Function composition for catenation of enumerators.
+
+- Write pretty printer iteratees/enumeratees
+  * for ANSI-Escaped text
+  * for Markdown
+  * for Sexpr
+  * for ...
+  
+## Development Process
 
 - Development for new features should go like this:
   1. scratch.ml file first
@@ -24,23 +52,23 @@ do an opam switch to the latest (development) version
      target (use the same name for the makefile as for the git branch).
   3. unit of files with tests and profiling
   4. separate library
+  
+## Coding conventions
 
-- Enumee -> Iteratee!
-  - Semantics of composition / operators.
-- Finalize interatee interface and operators (See Iteratee)
-  - Avoid closures as it allocates on the heap.
-  - Use continuation passing style.
-  - Semantics of concatenation/composition?
-- Write pretty printer iteratees/enumeratees
-  * for ANSI-Escaped text
-  * for Markdown
-  * for Sexpr
-  * for ...
-- Write Dynamometer library with current interface
-  * finish DSL
-  * pretty printing as a functor!
-  
-  
+TODO: Move to separate document.
+
+* Types of names:
+	- Mnemonic: 1-3 letters
+	- Brief : 2~5 letters
+	- Long : 5~10 letters
+	- Full : descriptive name with however many letters it takes
+
+* Use short names for type variables, e.g. ('a->'b) -> 'b->'a
+
+*  Type modules
+   * Have a type t
+   * And associated operations, e.g. pretty printing
+
 ## FAQ / Ideas
 
 Q: Why the name "fundament"?
@@ -51,6 +79,26 @@ Q: Why the name "fundament"?
 	
 	And because "fundament" is a word in German and English. It also
     sounds super cool.
+	
+Q: What is the deal with those iteratees?
+	
+	A: Originally, I had the idea of higher order functions for
+    collections of objects that either consume or produce a stream of
+    elements.
+	
+	After playing around for a bit, I decided to revisit Oleg's paper
+    on Iteratees, which certainly inspired me in the first place.
+	
+	They provide a nice abstraction over sequences of objects with
+    built-in resource management and error handling/reporting, can be
+    reasonably fast with a few adaptions, and can be used instead of
+    lists for the writers and pretty printers.
+	
+Q: Maybe I should package individual components in the fundament
+library separately?
+	
+	A: Since this is still in the prototyping stage and I am the sole
+    user, I simply do not see the need (yet).
 
 Q: What's the status as of 26.12.2014? for enumees/iteratees
 
@@ -63,6 +111,27 @@ Q: What's the status as of 26.12.2014? for enumees/iteratees
     kind of an oxymoron). Maybe concatenable would be the better word?
 
 [1]: Profiled with dynamometer precursor in ProfileEnumee.
+
+Q: What are enumees / iteratees / unpurees?
+
+	A: The iteratee concept adapted to the impure world of OCaml,
+	using continuations and recursive types to avoid unnecessary
+	allocations.  See profiling. After some microprofiling of
+	different approaches, i am now almost certain that the approach in
+	the current Unpuree module is the best one.
+	
+	TODO: Decide on the final name. Maybe latin or a less dead
+    language like italian? Iterati? Which sounds reasonably similar
+    but is probably confusing. Maybe IterateeK, like "K" for the
+    continuation in scheme CPS convention? It even has a
+    pronounciation that rolls of the tongue. Personally, I like that
+    last one.
+
+Q: Should we model pretty printers as enumerators or iteratees?
+
+	A: Iteratees. And pretty printer programs as enumerators.
+
+## Idea storage:
 
 Q: Maybe I should blog about this?
 
@@ -92,7 +161,7 @@ A: Titles of articles (The blog as a program with source-code quotations from th
 		- text-based pretty printer
 		- expression-based pretty printer
 		- how can we model recursion using iteratees?
-	
+		
 Q: The blog as an ever evolving, versioned program.
 
 	Running the program with different interpreters generates
@@ -117,22 +186,6 @@ Q: The blog as an ever evolving, versioned program.
     step.
 	
 	Needs bootstraping to work?
-
-
-Q: What are enumees?
-
-	A: The iteratee concept adapted to the impure world of OCaml,
-	using continuations and recursive types to avoid unnecessary
-	allocations.  See profiling. After some microprofiling of
-	different approaches, i am now almost certain that the approach in
-	the current Iteratee module is the best one. TODO: I just have to
-	figure out the semantics of composition first
-	
-	TODO: Probably deprecating the name enumees really soon!
-
-Q: Should we model pretty printers as enumerators or iteratees?
-
-	A: Iteratees. And pretty printer programs as enumerators.
 
 
 ## Graveyard of ideas:
