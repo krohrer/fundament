@@ -1,12 +1,25 @@
 let times = 10
 let n = 1000*1000
 let burn_cycles = 10
-let operation = (+)
+(* Prevent inlining, I guess: *)
+(* let rop = ref (+) *)
+(* let operation = !rop *)
 (* let operation a b = *)
 (*   for i = 0 to burn_cycles do *)
 (*     ignore (a + b) *)
 (*   done *)
 (*   ;a + b *)
+let fmt =
+  let write _ _ _ = ()
+  and flush () = () in
+  Format.make_formatter write flush
+
+let operation a b =
+  let s = a + b in
+  Format.pp_print_int fmt s;
+  s
+
+let operation = (+)
 
 let profile_case label thunk = Profiler.(
   profile ~times default thunk |> print_stats Format.std_formatter label
@@ -155,13 +168,6 @@ let profile_array =
   (* 				    (!))) |> *)
   (* 	  run cont_with_result ignore ignore *)
   (*   ); *)
-  profile_case "Array/unpuree+fold"
-    Unpuree_Prototype.(fun () ->
-      execute
-	~source:(enum_array int_array)
-	~query:(fold operation 0)
-	~on_done:cont_with_result
-	());
   profile_case "Array/unpuree+inline"
     Unpuree_Prototype.(fun () ->
       let it =
@@ -169,14 +175,32 @@ let profile_array =
 	  s=ref 0;
 	  cp=(fun s -> s);
 	  ex=(!);
-	  k=fun st el done_k recur ->
+	  ret=return;
+	  k=fun st el ret cont ->
 	    st := operation !st el;
-	    recur
+	    cont
 	}
       in
       execute
 	~source:(enum_array int_array)
 	~query:it
+	~on_done:cont_with_result
+	());
+  profile_case "Array/unpuree+cont"
+    Unpuree_Prototype.(fun () ->
+      let sum = ref 0 in
+      let rec it = Cont (fun i ->
+	sum := operation !sum i;
+	it)
+      in
+      (enum_array int_array) it;
+      cont_with_result !sum
+    );	
+  profile_case "Array/unpuree+fold"
+    Unpuree_Prototype.(fun () ->
+      execute
+	~source:(enum_array int_array)
+	~query:(fold operation 0)
 	~on_done:cont_with_result
 	());
   ()
@@ -264,6 +288,7 @@ let profile_list =
 	  s=ref 0;
 	  cp=(fun s -> s);
 	  ex=(!);
+	  ret=return;
 	  k=fun st el done_k recur ->
 	    st := operation !st el;
 	    recur
