@@ -23,12 +23,6 @@ version.
   * finish DSL
   * pretty printing as a functor!
 
-- Enumee -> Iteratee!
-  - Semantics of composition / operators.
-- Finalize Unpuree
-  - Decide on a less obnoxiuous name
-  - Write unit tests and examples
-
 - Finalize interatee interface and operators (See Unpuree)
   - [X] Avoid closures as it allocates on the heap.
 	  - [X] At the cost of mutable style
@@ -37,6 +31,8 @@ version.
 	  - [X] Monadic operations
 	  - [X] Higher-order operations (map,fold,filter,iter)
 	  - [X] Function composition for catenation of enumerators.
+
+- Write unit tests and examples for IterateeK aka Unpuree.
 
 - Write pretty printer iteratees/enumeratees
   * for ANSI-Escaped text
