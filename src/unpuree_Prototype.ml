@@ -1,66 +1,96 @@
+(*__________________________________________________________________________*)
+
 type (_,_) t = 
-  | Done :
-      'out			->  ( _,'out) t
-  | Cont :
-      ('el->('el,'out) t)	-> ('el,'out) t
-  | Recur : {
-    k	: 't . 'el->('out->'t)->'t->'t;
-  }				-> ('el,'out) t
+  | Done : 'a					->  ( _,'a) t
+
+  | Cont :  ('el->('el,'a) t)			-> ('el,'a) t
+
   | SRecur : {
     s	: 's;
     cp	: 's->'s;
-    ex	: 's->'out;
-    k	: 't . 's->'el->('out->'t)->'t->'t 
-  }				-> ('el,'out) t
-  | Error :
-      exn			-> ( _, _) t
+    ex	: 's->'b;
+    ret : 'b -> ('el,'a) t;
+    k	: 't . 's->'el->('b->'t)->'t->'t
+  }						-> ('el,'a) t
 
-type ('el,'out) enumerator = ('el,'out) t -> ('el,'out) t
+  | Error : error				-> ( _, _) t
+
+and error = pos * exn
+and pos = Position.brief Position.t
+
+type ('el,'a) enumerator = ('el,'a) t -> ('el,'a) t
+
+type ('elo,'eli,'a) enumeratee = ('eli,'a) t -> ('elo,('eli,'a) t) t
 
 (*__________________________________________________________________________*)
 
-let (>>>) e1 e2 = fun it -> e2 (e1 it)
-
+(** A partial stream is a Divergence exception when run unless
+    otherwise specified. *)
 exception Divergence
 
 let rec run done_k err_k cont_k = function
-  | Done o			-> done_k o
-  | Cont _
-  | Recur _ as it		-> cont_k it
-  | SRecur {s;ex;_}		-> done_k (ex s)
-  | Error e			-> err_k e
+  | Done out			-> done_k out
+  | Cont _ as it		-> cont_k it
+  | SRecur {s;ex;ret;_}		-> run done_k err_k cont_k (ret (ex s))
+  | Error err			-> err_k err
 
 external id : 'a -> 'a = "%identity"
 
-let run_exc it = run id raise ignore it
+let error_raise (_,exc) = raise exc
+let raise_divergence _ = raise Divergence
+
+let run_exc it = run id error_raise raise_divergence it
+
+let run0 it = run id error_raise raise_divergence it
 
 (*__________________________________________________________________________*)
 
-let copy = function
-  | SRecur {s;cp;ex;k} as it	-> let s' = cp s in
-				   if s' == s then
-				     it
-				   else
-				     SRecur {s=cp s;cp;ex;k}
-  | Recur _
-  | Done _
-  | Cont _
+(* let (>>>=) e1 e2 = run return  *)
+let (>>>) e1 e2 = fun it -> e2 (e1 it)
+
+let return o = Done o
+
+let rec bind i fi =
+  match i with
+  | Cont k			-> let k el =
+				     bind (k el) fi
+				   in
+				   Cont k
+  | SRecur {s;cp;ex;ret;k}	-> let ret o =
+				     bind (ret o) fi
+				   in
+				   SRecur {s=cp s;cp;ex;ret;k}
+  | Done o			-> fi o
   | Error _ as it		-> it
 
 (*__________________________________________________________________________*)
 
+(* let copy = function *)
+(*   | SRecur {s;cp;ex;ret;k} as it	-> let s' = cp s in *)
+(* 					   if s' == s then *)
+(* 					     it *)
+(* 					   else *)
+(* 					     SRecur {s=cp s;cp;ex;ret;k} *)
+(*   | Done _ *)
+(*   | Cont _ *)
+(*   | Error _ as it		-> it *)
+
+(*__________________________________________________________________________*)
+
 let rec map f = function
-  | Cont k		-> Cont (fun e -> map f (k (f e)))
+  | Cont k			-> Cont (fun e -> map f (k (f e)))
 
-  | SRecur {s;cp;ex;k}	-> let k s el done_k recur =
-			     k s (f el) done_k recur
-			   in
-			   SRecur {s=cp s;cp;ex;k}
-
-  | Recur {k}		-> let k el done_k recur =
-			     k (f el) done_k recur
-			   in
-			   Recur {k}
+  | SRecur {s;cp;ex;ret;k}	-> let k s el ret cont =
+  				     k s (f el) ret cont
+  				   in
+				   let ret o =
+				     map f (ret o)
+				   in
+  				   SRecur {s = cp s;
+					   cp;
+					   ex;
+					   ret;
+					   k}
 
   | Error _
   | Done _ as it	-> it  
@@ -69,11 +99,11 @@ let rec map f = function
 
 (* Does not work, see issues/escapingTypes.ml *)
 let filter_srecur_k pred k =
-  fun s el done_k recur ->
+  fun s el ret cont ->
     if pred el then
-      k s el done_k recur
+      k s el ret cont
     else
-      recur
+      cont
 
 let rec filter pred = function
   | Cont k as it	-> let k el =
@@ -84,21 +114,13 @@ let rec filter pred = function
 			   in
 			   Cont k
 
-  | SRecur {s;cp;ex;k}	-> let k s el done_k recur =
-			     if pred el then
-			       k s el done_k recur
-			     else
-			       recur
-			   in
-			   SRecur {s=cp s;cp;ex;k}
-
-  | Recur {k}		-> let k el done_k recur =
-  			     if pred el then
-  			       k el done_k recur
-  			     else
-  			       recur
-  			   in
-  			   Recur {k}
+  | SRecur {s;cp;ex;ret;k}	-> let k s el ret cont =
+				     if pred el then
+				       k s el ret cont
+				     else
+				       cont
+				   in
+				   SRecur {s=cp s;cp;ex;ret;k}
 
   | Error _
   | Done _ as it	-> it
@@ -106,27 +128,22 @@ let rec filter pred = function
 (*__________________________________________________________________________*)
 
 let rec filter_map f = function
-(* : type e f. (e->f option) -> (f,'out) t -> (e,'out) t = fun f -> function *)
-  | Cont k as it	-> let k el =
-			     match f el with
-			     | None	-> filter_map f it
-			     | Some el' -> filter_map f (k el')
-			   in
-			   Cont k
+  | Cont k as it		-> let k el =
+				     match f el with
+				     | None	-> filter_map f it
+				     | Some el' -> filter_map f (k el')
+				   in
+				   Cont k
 
-  | SRecur {s;cp;ex;k}	-> let k s el done_k recur =
-			     match f el with
-			     | Some el' -> k s el' done_k recur
-			     | None	-> recur
-			   in
-			   SRecur {s=cp s;cp;ex;k}
-
-  | Recur {k}				-> let k el done_k recur =
-			     match f el with
-			     | Some el' -> k el' done_k recur
-			     | None	-> recur
-			   in
-			   Recur {k}
+  | SRecur {s;cp;ex;ret;k}	-> let k s el ret cont =
+				     match f el with
+				     | Some el' -> k s el' ret cont
+				     | None	-> cont
+				   in
+				   let ret o =
+				     filter_map f (ret o)
+				   in
+				   SRecur {s=cp s;cp;ex;ret;k}
 
   | Error _
   | Done _ as it	-> it
@@ -138,15 +155,14 @@ let to_list =
     let s = ref [el]
     and cp s = ref !s
     and ex s = List.rev !s
-    and k s el _ recur =
+    and ret o = return o
+    and k s el _ cont =
       s := el :: !s;
-      recur
+      cont
     in
-    SRecur {s;cp;ex;k}
+    SRecur {s;cp;ex;ret;k}
   in
     Cont k
-
-let return o = Done o
 
 let rec enum_list list it =
   match list with
@@ -154,8 +170,7 @@ let rec enum_list list it =
   | x::rest ->
     match it with
     | Cont k			-> enum_list rest (k x)
-    | Recur {k} as it		-> enum_list rest (k x return it)
-    | SRecur {s;k;_} as it	-> enum_list rest (k s x return it)
+    | SRecur {s;k;ret;_} as it	-> enum_list rest (k s x ret it)
     | Done _
     | Error _ as it		-> it
 
@@ -164,8 +179,7 @@ let rec enum_array' arr i n it =
   if i < n then
     match it with 
     | Cont k			-> enum_array' arr i n (k arr.(i))
-    | Recur {k} as it		-> enum_array' arr i n (k arr.(i) return it)
-    | SRecur {s;k;_} as it	-> enum_array' arr i n (k s arr.(i) return it)
+    | SRecur {s;k;ret;_} as it	-> enum_array' arr i n (k s arr.(i) ret it)
     | Done _
     | Error _ as it		-> it
   else
@@ -182,11 +196,12 @@ let fold1 f =
     let s = ref el
     and cp s = ref !s
     and ex s = !s
-    and k s el _ recur =
+    and ret = return
+    and k s el _ cont =
       s := f !s el;
-      recur
+      cont
     in
-    SRecur {s;cp;ex;k}
+    SRecur {s;cp;ex;ret;k}
   in
   Cont k
 
@@ -194,13 +209,14 @@ let fold1 f =
 
 let fold f a =
   let s = ref a
-  and cp s = ref !s
+  and cp s = s
   and ex s = !s
-  and k s x _ recur =
+  and ret o = Done o
+  and k s x _ cont =
     s := f !s x;
-    recur
+    cont
   in
-  SRecur {s;cp;ex;k}
+  SRecur {s;cp;ex;ret;k}
   
 
 (*__________________________________________________________________________*)
@@ -211,9 +227,10 @@ let iter f =
       s=();
       cp=id;
       ex=id;
-      k=fun s el _ recur ->
+      ret=(fun () -> Done ());
+      k=fun s el _ cont ->
 	f el;
-	recur}
+	cont}
   in
   Cont k
 
@@ -223,8 +240,8 @@ let execute
     ~source
     ~query
     ~on_done
-    ?(on_err=raise)
-    ?(on_div=fun _ -> raise Divergence)
+    ?(on_err=error_raise)
+    ?(on_div=raise_divergence)
     ()
     =
   run on_done on_err on_div @@ source @@ query
@@ -240,9 +257,13 @@ let l =
   in
   gen 10 []
 
+let rec it = Cont (fun () ->
+  print_endline "Everything is awesome.";
+  it)
+
 (* Multistaged transformations *)
-let _ = 
-  run (Printf.printf "Result = %f\n%!") raise ignore
+let _ =
+  run (Printf.printf "Result = %f\n%!") error_raise ignore
   @@ enum_list l
   @@ filter (fun i -> i mod 2 = 0)
   @@ map float
