@@ -24,17 +24,23 @@ let rec pp_print : type a. Format.formatter -> a t -> unit =
 	    pp_print_string fmt ":";
 	    pp_print_space fmt ();
 	    pp_print fmt pos;
-	    pp_close_box fmt ())
+	    pp_close_box fmt ();
+	    ())
   | Description (pos,text) ->
     Format.(pp_open_vbox fmt indent;
 	    pp_print fmt pos;
 	    pp_print_cut fmt ();
 	    pp_print_text fmt text;
-	    pp_close_box fmt ())
+	    pp_close_box fmt ();
+	    ())
   | Index i ->
-    ()
+    Format.(pp_print_int fmt i;
+	    ())
   | OneOfTotal (i,n) ->
-    ()
+    Format.(pp_print_int fmt i;
+	    pp_print_string fmt "/";
+	    pp_print_int fmt n;
+	    ())
   | Stream { name; pos; count } ->
     ()
   | ByteStream { name; pos; count } ->
