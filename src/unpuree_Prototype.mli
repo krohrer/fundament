@@ -2,35 +2,42 @@
     CPS variant. *)
 
 (** The iteratee type, with the first two cases basically from Oleg's
-    paper, an first draft for an impure implementation, and an error
+    paper, a first draft for an impure implementation, and an error
     descriptor. *)
 type (_,_) t = 
 
   (** The simplest case, an immediate result *)
   | Done : 'a					->  ( _,'a) t
 
-  (** A continuation *)
+  (** A continuation that consumes one element of the stream *)
   | Cont :  ('el->('el,'a) t)			-> ('el,'a) t
 
   (** A configurable, recurring continuation, with copyable state, and
       a way for the [run]-family functions to extract a result at the
       end of the computation based on the last state.  The
-      continuation itself takes two contionations itself, one for the
-      done case and one for the recurrence. *)
+      continuation function takes two continuations itself, one for
+      the done case and one for the recurrence. *)
   | SRecur : {
+    (** Internal state*)
     s	: 's;
-    cp	: 's->'s;
-    ex	: 's->'b;
+    (** Copy state *)
+    cp	: 's->'s; 
+    (** Extract result from state at end of stream *)
+    ex	: ('s->'b) option;
+    (** Return/done continuation, used for efficient implementation of
+	bind. *)
     ret : 'b -> ('el,'a) t;
-    k	: 't . 's->'el->('b->'t)->'t->'t
+    (** Generalized continuation function. *)
+    k	: 't1 't2 . 's->'el->('b->'t)->'t->(('t1,'t2) t as 't)
   }						-> ('el,'a) t
+
   (** A captured exception with a position descriptor *)
   | Error : error				-> ( _, _) t
 
 (** An exception which happened at a particular location *)
 and error = pos * exn
 (** A generic position description*)
-and pos = Position.brief Position.t
+and pos = string
 
 (** An enumerator is iteration and resource management in one producer. *)
 type ('el,'a) enumerator = ('el,'a) t -> ('el,'a) t

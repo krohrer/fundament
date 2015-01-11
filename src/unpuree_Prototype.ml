@@ -8,15 +8,15 @@ type (_,_) t =
   | SRecur : {
     s	: 's;
     cp	: 's->'s;
-    ex	: 's->'b;
+    ex	: ('s->'b) option;
     ret : 'b -> ('el,'a) t;
-    k	: 't . 's->'el->('b->'t)->'t->'t
+    k	: 'c 'd . 's->'el->('b->'t)->'t->(('c,'d) t as 't)
   }						-> ('el,'a) t
 
   | Error : error				-> ( _, _) t
 
 and error = pos * exn
-and pos = Position.brief Position.t
+and pos = string
 
 type ('el,'a) enumerator = ('el,'a) t -> ('el,'a) t
 
@@ -31,7 +31,8 @@ exception Divergence
 let rec run done_k err_k cont_k = function
   | Done out			-> done_k out
   | Cont _ as it		-> cont_k it
-  | SRecur {s;ex;ret;_}		-> run done_k err_k cont_k (ret (ex s))
+  | SRecur {s;ex=Some ex;ret;_}	-> run done_k err_k cont_k (ret (ex s))
+  | SRecur {s;ex=None;_} as it	-> cont_k it
   | Error err			-> err_k err
 
 external id : 'a -> 'a = "%identity"
@@ -160,7 +161,7 @@ let to_list =
       s := el :: !s;
       cont
     in
-    SRecur {s;cp;ex;ret;k}
+    SRecur {s;cp;ex=Some ex;ret;k}
   in
     Cont k
 
@@ -201,7 +202,7 @@ let fold1 f =
       s := f !s el;
       cont
     in
-    SRecur {s;cp;ex;ret;k}
+    SRecur {s;cp;ex=Some ex;ret;k}
   in
   Cont k
 
@@ -216,7 +217,7 @@ let fold f a =
     s := f !s x;
     cont
   in
-  SRecur {s;cp;ex;ret;k}
+  SRecur {s;cp;ex=Some ex;ret;k}
   
 
 (*__________________________________________________________________________*)
@@ -226,7 +227,7 @@ let iter f =
     SRecur {
       s=();
       cp=id;
-      ex=id;
+      ex=Some id;
       ret=(fun () -> Done ());
       k=fun s el _ cont ->
 	f el;
@@ -260,6 +261,12 @@ let l =
 let rec it = Cont (fun () ->
   print_endline "Everything is awesome.";
   it)
+
+let it =  SRecur { s=();
+		   cp=id;
+		   ex=None;
+		   ret=return;
+		   k=fun s el ret cont -> Error ("meh", Exit) }
 
 (* Multistaged transformations *)
 let _ =
