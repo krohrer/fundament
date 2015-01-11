@@ -10,8 +10,8 @@ prof-it:
 	./profileIteratee.native
 
 it-proto:
-	ocamlbuild unpuree_Prototype.native
-	./unpuree_Prototype.native
+	ocamlbuild iterateeK.native
+	./iterateeK.native
 
 pp-proto:
 	ocamlbuild prettyPrinting_Prototype.native

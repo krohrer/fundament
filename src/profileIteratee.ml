@@ -168,8 +168,8 @@ let profile_array =
   (* 				    (!))) |> *)
   (* 	  run cont_with_result ignore ignore *)
   (*   ); *)
-  profile_case "Array/unpuree+inline"
-    Unpuree_Prototype.(fun () ->
+  profile_case "Array/eek+inline"
+    IterateeK.(fun () ->
       let it =
 	SRecur {
 	  s=ref 0;
@@ -186,8 +186,8 @@ let profile_array =
 	~query:it
 	~on_done:cont_with_result
 	());
-  profile_case "Array/unpuree+cont"
-    Unpuree_Prototype.(fun () ->
+  profile_case "Array/eek+cont"
+    IterateeK.(fun () ->
       let sum = ref 0 in
       let rec it = Cont (fun i ->
 	sum := operation !sum i;
@@ -196,8 +196,8 @@ let profile_array =
       (enum_array int_array) it;
       cont_with_result !sum
     );	
-  profile_case "Array/unpuree+fold"
-    Unpuree_Prototype.(fun () ->
+  profile_case "Array/eek+fold"
+    IterateeK.(fun () ->
       execute
 	~source:(enum_array int_array)
 	~query:(fold operation 0)
@@ -281,8 +281,8 @@ let profile_list =
   (* 	  run cont_with_result ignore ignore *)
   (*   ); *)
   profile_case
-    "List/unpuree+inline"
-    Unpuree_Prototype.(fun () ->
+    "List/eek+inline"
+    IterateeK.(fun () ->
       let it =
 	SRecur {
 	  s=ref 0;
@@ -300,8 +300,8 @@ let profile_list =
 	~on_done:cont_with_result
 	());
   profile_case
-    "List/unpuree-from-fold"
-    Unpuree_Prototype.(fun () ->
+    "List/eek+from-fold"
+    IterateeK.(fun () ->
       execute
 	~source:(enum_list int_list)
 	~query:(fold operation 0)

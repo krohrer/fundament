@@ -23,7 +23,7 @@ version.
   * finish DSL
   * pretty printing as a functor!
 
-- Finalize interatee interface and operators (See Unpuree)
+- Finalize interatee interface and operators (See IterateeK)
   - [X] Avoid closures as it allocates on the heap.
 	  - [X] At the cost of mutable style
   - [X] Use continuation passing style.
@@ -32,7 +32,7 @@ version.
 	  - [X] Higher-order operations (map,fold,filter,iter)
 	  - [X] Function composition for catenation of enumerators.
 
-- Write unit tests and examples for IterateeK aka Unpuree.
+- Write unit tests and examples for IterateeK.
 
 - Write pretty printer iteratees/enumeratees
   * for ANSI-Escaped text
@@ -108,20 +108,17 @@ Q: What's the status as of 26.12.2014? for enumees/iteratees
 
 [1]: Profiled with dynamometer precursor in ProfileEnumee.
 
-Q: What are enumees / iteratees / unpurees?
+Q: What are enumees / iteratees?
 
 	A: The iteratee concept adapted to the impure world of OCaml,
 	using continuations and recursive types to avoid unnecessary
 	allocations.  See profiling. After some microprofiling of
 	different approaches, i am now almost certain that the approach in
-	the current Unpuree module is the best one.
+	the current IterateeK module is the best one.
 	
-	TODO: Decide on the final name. Maybe latin or a less dead
-    language like italian? Iterati? Which sounds reasonably similar
-    but is probably confusing. Maybe IterateeK, like "K" for the
-    continuation in scheme CPS convention? It even has a
-    pronounciation that rolls of the tongue. Personally, I like that
-    last one.
+	Enumees were the first prototypes that only used recursive
+    function types and thus were less powerfull than the current
+    IterateeK variant.
 
 Q: Should we model pretty printers as enumerators or iteratees?
 
