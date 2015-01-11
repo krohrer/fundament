@@ -1,9 +1,9 @@
 (** A perverted, unpure form of Oleg's iteratee concept, based on the
     CPS variant. *)
 
-(** The iteratee type, with the first two cases basically from Oleg's
-    paper, a first draft for an impure implementation, and an error
-    descriptor. *)
+(** The iteratee type, with the first two cases very similar to the
+    ones from Oleg's paper, plus an additinal case for an impure,
+    stateful implementation, and a case for an unrecoverable error. *)
 type (_,_) t = 
 
   (** The simplest case, an immediate result *)
@@ -12,11 +12,11 @@ type (_,_) t =
   (** A continuation that consumes one element of the stream *)
   | Cont :  ('el->('el,'a) t)			-> ('el,'a) t
 
-  (** A configurable, recurring continuation, with copyable state, and
-      a way for the [run]-family functions to extract a result at the
-      end of the computation based on the last state.  The
-      continuation function takes two continuations itself, one for
-      the done case and one for the recurrence. *)
+  (** A recurring continuation, with copyable state, and a way for the
+      [run]-family functions to extract a result at the end of the
+      computation based on the last state.  The continuation function
+      takes two continuations itself, one for the done case and one
+      for the recurrence. *)
   | SRecur : {
     (** Internal state*)
     s	: 's;
