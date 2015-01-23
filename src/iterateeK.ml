@@ -18,9 +18,40 @@ type (_,_) t =
 and error = pos * exn
 and pos = string
 
+and ('s,'el,'b) k = {
+  continuation : 't1 't2 . 's->'el->('b->'t)->'t->(('t1,'t2) t as 't)
+}
+
 type ('el,'a) enumerator = ('el,'a) t -> ('el,'a) t
 
 type ('elo,'eli,'a) enumeratee = ('eli,'a) t -> ('elo,('eli,'a) t) t
+
+(*__________________________________________________________________________*)
+
+external id : 'a -> 'a = "%identity"
+
+let return o = Done o
+
+let recur :
+    state:'s ->
+  ?copy:('s->'s) ->
+  ?extract:('s->'a) ->
+  ('s,'el,'a) k ->
+  ('el,'a) t
+  =
+  fun
+    ~state
+    ?(copy=id)
+    ?extract
+    { continuation }
+->
+  SRecur {
+    s = state;
+    cp = copy;
+    ex = extract;
+    ret = return;
+    k = continuation
+  }
 
 (*__________________________________________________________________________*)
 
@@ -28,28 +59,34 @@ type ('elo,'eli,'a) enumeratee = ('eli,'a) t -> ('elo,('eli,'a) t) t
     otherwise specified. *)
 exception Divergence
 
-let rec run done_k err_k cont_k = function
+let rec step done_k err_k part_k el = function
   | Done out			-> done_k out
-  | Cont _ as it		-> cont_k it
-  | SRecur {s;ex=Some ex;ret;_}	-> run done_k err_k cont_k (ret (ex s))
-  | SRecur {s;ex=None;_} as it	-> cont_k it
+  | Cont k			-> part_k (k el)
+  | SRecur {s;ret;k} as it	-> part_k (k s el ret it)
   | Error err			-> err_k err
 
-external id : 'a -> 'a = "%identity"
+let rec step0 it el =
+  match it with
+  | Done _
+  | Error _ as it		-> it
+  | Cont k			-> k el
+  | SRecur {s;ret;k} as it	-> k s el ret it
+
+let rec finish done_k err_k part_k = function
+  | Done out			-> done_k out
+  | Cont _ as it		-> part_k it
+  | SRecur {s;ex=Some ex;ret;_}	-> finish done_k err_k part_k (ret (ex s))
+  | SRecur {s;ex=None;_} as it	-> part_k it
+  | Error err			-> err_k err
 
 let error_raise (_,exc) = raise exc
 let raise_divergence _ = raise Divergence
 
-let run_exc it = run id error_raise raise_divergence it
-
-let run0 it = run id error_raise raise_divergence it
+let finish0 it = finish id error_raise raise_divergence it
 
 (*__________________________________________________________________________*)
 
 (* let (>>>=) e1 e2 = run return  *)
-let (>>>) e1 e2 = fun it -> e2 (e1 it)
-
-let return o = Done o
 
 let rec bind i fi =
   match i with
@@ -63,6 +100,24 @@ let rec bind i fi =
 				   SRecur {s=cp s;cp;ex;ret;k}
   | Done o			-> fi o
   | Error _ as it		-> it
+
+let propagate_error e = Error e
+let propagate_result o = Done o
+
+(* let (>>>) enum1 enum2 = fun a it -> *)
+(*   match enum1 a it with *)
+(*   | Done b -> (fun it -> enum2 b it *)
+(*   | Error _ as it -> enum2 *)
+(*   | Cont _ *)
+(*   | SRecur _ *)
+(*   finish enum2 propagate_error raise_divergence (enum1 a it) *)
+
+let (+++) e1 e2 = fun it ->
+  match e1 it with
+  | Done _
+  | Error _ as it -> it
+  | Cont _
+  | SRecur _ as it -> e2 it
 
 (*__________________________________________________________________________*)
 
@@ -191,7 +246,6 @@ let enum_array arr it =
 
 (*__________________________________________________________________________*)
 
-
 let fold1 f = 
   let k el =
     let s = ref el
@@ -235,6 +289,7 @@ let iter f =
   in
   Cont k
 
+(* Query language *)
 (*__________________________________________________________________________*)
 
 let execute
@@ -245,8 +300,9 @@ let execute
     ?(on_div=raise_divergence)
     ()
     =
-  run on_done on_err on_div @@ source @@ query
+  finish on_done on_err on_div @@ source @@ query
 
+(* Testing *)
 (*__________________________________________________________________________*)
 
 let l =
@@ -270,7 +326,7 @@ let it =  SRecur { s=();
 
 (* Multistaged transformations *)
 let _ =
-  run (Printf.printf "Result = %f\n%!") error_raise ignore
+  finish (Printf.printf "Result = %f\n%!") error_raise ignore
   @@ enum_list l
   @@ filter (fun i -> i mod 2 = 0)
   @@ map float
@@ -279,7 +335,7 @@ let _ =
 (* A query language using iteratees *)
 let _ =
   execute
-    ~source:(enum_list l >>> enum_list (List.rev l))
+    ~source:(enum_list l +++ enum_list (List.rev l))
     ~query:(map float @@ to_list)
     ~on_done:id
     ()

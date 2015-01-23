@@ -1,4 +1,8 @@
-default: it-proto
+default: sexpr-proto
+
+sexpr-proto:
+	ocamlbuild sexpr_Prototype.native
+	./sexpr_Prototype.native
 
 dynamometer:
 	ocamlbuild dynamometer.native

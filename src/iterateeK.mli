@@ -39,7 +39,13 @@ and error = pos * exn
 (** A generic position description*)
 and pos = string
 
-(** An enumerator is iteration and resource management in one producer. *)
+(** Polymorphic continuation (contained in record to stay polymorphic) *)
+and ('s,'el,'b) k = { continuation : 't1 't2 . 's->'el->('b->'t)->'t->(('t1,'t2) t as 't) }
+
+(** An enumerator is iteration and resource management in one producer.
+
+    I skipped the monad, because we're unpure anyway.
+*)
 type ('el,'a) enumerator = ('el,'a) t -> ('el,'a) t
 
 (** Directly from Oleg's paper: a producer of the stream eli and a
@@ -62,6 +68,14 @@ type ('elo,'eli,'a) enumeratee = ('eli,'a) t -> ('elo,('eli,'a) t) t
 val return	: 'a -> (_,'a) t
 val bind	: ('e,'a) t -> ('a -> ('e,'b) t) -> ('e,'b) t
 
+(** Composing enumerators: Kleisli composition specialized for enumerators *)
+(* val (>>>) : ('a -> ('el,'b) enumerator) -> ('b -> ('el,'c) enumerator) -> ('a -> ('el,'c) enumerator) *)
+(** Appending enumerators *)
+val (+++) : 'e -> 'e -> (('el,'a) enumerator as 'e)
+
+(** [p ^| t]: Connecting producers with transformers, cf. [.|] in Oleg's paper. *)
+(* val (^|) : (('el,'a) t -> 'w) -> ('el, (_, 'a) t) t -> 'w *)
+
 (*__________________________________________________________________________*)
 
 (** {6 The usual suspects} *)
@@ -78,6 +92,15 @@ val fold1	: ('a -> 'a -> 'a) -> ('a,'a) t
 
 (*__________________________________________________________________________*)
 
+val recur :
+  state:'s ->
+  ?copy:('s->'s) ->
+  ?extract:('s->'a) ->
+  ('s,'el,'a) k ->
+  ('el,'a) t
+
+(*__________________________________________________________________________*)
+
 val enum_array : 'a array -> ('a,'b) t -> ('a,'b) t
 val enum_list : 'a list -> ('a,'b) t -> ('a,'b) t
 
@@ -87,12 +110,21 @@ val to_list : ('a,'a list) t
 
 exception Divergence
 
-(** [run done_k exn_k part_k it] *)
-val run : ('a -> 'r) -> (error -> 'r) -> ('t -> 'r) -> ((_,'a) t as 't) -> 'r
-(** [run it], can additionally raise Divergence upon non-terminated iterator*)
-val run0 : (_,unit) t -> unit
 
-(** A more verbose version of [run] *)
+(** [step done_k err_k part_k el it] : Feed element el into iterator,
+    if possible. *)
+val step : ('a -> 'r) -> (error -> 'r) -> ('t -> 'r) -> 'el -> (('el,'a) t as 't) -> 'r
+(** [step it el] : An inefficient step function for use with left folds. *)
+val step0 : ('el,'a) t -> 'el -> ('el,'a) t
+
+(** [finish done_k err_k part_k it] : Call appropriate continuation. *)
+val finish : ('a -> 'r) -> (error -> 'r) -> ('t -> 'r) -> ((_,'a) t as 't) -> 'r
+(** [finish it], will raise Divergence on partial iterator. *)
+val finish0 : (_,'a) t -> 'a
+
+(*__________________________________________________________________________*)
+
+(** Query language *)
 val execute :
   source:('el, 'out) enumerator ->
   query:('el,'out) t ->
