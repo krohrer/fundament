@@ -30,12 +30,45 @@ let rec map f = function
 
 (*__________________________________________________________________________*)
 
-let rec limit n = function
-  | Cont k when n > 0 -> Cont (fun e -> limit (n-1) (k e))
-  | Cont _
-  | SRecur _
-  | Done _ 
-  | Error _ as it -> it
+(* This should probably be a real enumeratee *)
+module Limit =
+  struct
+    (* type ('el,'a) s = { n : int; *)
+    (* 			mutable i : int; *)
+    (* 			mutable it : ('el,'a) t } *)
+
+    (* let copy { i; n; it } = { i; n; it } *)
+
+    (* let rec it n = function *)
+    (*   | Cont k		when 0 < 0 -> Cont (fun e -> it (n-1) (k e)) *)
+    (*   | SRecur _ as it	when 0 < n ->  *)
+
+    (* 	recur *)
+    (* 	  ~state:{ i = n; n; it } *)
+    (* 	  ~copy *)
+    (* 	  ~extract *)
+    (* 	  { continuation } *)
+
+    (*   | Cont _ *)
+    (*   | SRecur _ *)
+    (*   | Done _ *)
+    (*   | Error _ as it -> it *)
+
+    (* and extract { it; _ } = *)
+    (*   failwith "TODO" *)
+      
+    (* and continuation s el return recur = *)
+    (*   if 0 < s.i then ( *)
+    (* 	s.i <- s.i - 1; *)
+    (* 	let it = step0 s.it el in *)
+    (* 	if it != s.it then s.it <- it; *)
+    (* 	recur *)
+    (*   ) *)
+    (*   else *)
+    (* 	s.it *)
+  end
+
+let limit n = failwith "TODO"
 
 (*__________________________________________________________________________*)
 
