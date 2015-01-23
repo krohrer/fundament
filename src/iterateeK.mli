@@ -71,24 +71,6 @@ val bind	: ('e,'a) t -> ('a -> ('e,'b) t) -> ('e,'b) t
 (** Composing enumerators: Kleisli composition specialized for enumerators *)
 (* val (>>>) : ('a -> ('el,'b) enumerator) -> ('b -> ('el,'c) enumerator) -> ('a -> ('el,'c) enumerator) *)
 (** Appending enumerators *)
-val (+++) : 'e -> 'e -> (('el,'a) enumerator as 'e)
-
-(** [p ^| t]: Connecting producers with transformers, cf. [.|] in Oleg's paper. *)
-(* val (^|) : (('el,'a) t -> 'w) -> ('el, (_, 'a) t) t -> 'w *)
-
-(*__________________________________________________________________________*)
-
-(** {6 The usual suspects} *)
-
-val map		: ('e->'f) -> ('f,'a) t -> ('e,'a) t
-
-val filter	: ('e->bool) -> ('e,'a) t -> ('e,'a) t
-val filter_map	: ('e->'f option) -> ('f,'a) t -> ('e,'a) t
-
-val iter	: ('e -> unit) -> ('e,unit) t
-
-val fold	: ('a -> 'e -> 'a) -> 'a -> ('e,'a) t
-val fold1	: ('a -> 'a -> 'a) -> ('a,'a) t
 
 (*__________________________________________________________________________*)
 
@@ -101,15 +83,7 @@ val recur :
 
 (*__________________________________________________________________________*)
 
-val enum_array : 'a array -> ('a,'b) t -> ('a,'b) t
-val enum_list : 'a list -> ('a,'b) t -> ('a,'b) t
-
-val to_list : ('a,'a list) t
-
-(*__________________________________________________________________________*)
-
 exception Divergence
-
 
 (** [step done_k err_k part_k el it] : Feed element el into iterator,
     if possible. *)
@@ -121,19 +95,6 @@ val step0 : ('el,'a) t -> 'el -> ('el,'a) t
 val finish : ('a -> 'r) -> (error -> 'r) -> ('t -> 'r) -> ((_,'a) t as 't) -> 'r
 (** [finish it], will raise Divergence on partial iterator. *)
 val finish0 : (_,'a) t -> 'a
-
-(*__________________________________________________________________________*)
-
-(** Query language *)
-val execute :
-  source:('el, 'out) enumerator ->
-  query:('el,'out) t ->
-  on_done:('out -> 'r) ->
-  ?on_err:(error -> 'r) ->
-  ?on_div:(('el, 'out) t -> 'r) ->
-  unit -> 'r
-
-(*__________________________________________________________________________*)
 
 (**/*)
 

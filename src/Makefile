@@ -1,4 +1,4 @@
-default: sexpr-proto
+default: test-it
 
 sexpr-proto:
 	ocamlbuild sexpr_Prototype.native
@@ -22,8 +22,8 @@ pp-proto:
 	./prettyPrinting_Prototype.native
 
 test-it:
-	ocamlbuild testIteratee.native
-	./testIteratee.native
+	ocamlbuild test_iterateeK.native
+	./test_iterateeK.native
 
 dump:
 	@echo "Make: Dumping CMM"
