@@ -8,10 +8,10 @@ type (_,_) t =
   | SRecur : {
     s	: 's;
     cp	: 's->'s;
-    ex	: ('s->'b) option;
-    ret : 'b -> ('el,'a) t;
-    k	: 'c 'd . 's->'el->('b->'t)->'t->(('c,'d) t as 't)
-  }						-> ('el,'a) t
+    ex	: ('s->'a) option;
+    ret : 'a -> ('el,'b) t;
+    k	: 't1 't2 . 's->'el->('a->'t)->'t->(('t1,'t2) t as 't)
+  }						-> ('el,'b) t
 
   | Error : error				-> ( _, _) t
 

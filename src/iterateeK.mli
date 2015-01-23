@@ -23,13 +23,13 @@ type (_,_) t =
     (** Copy state *)
     cp	: 's->'s; 
     (** Extract result from state at end of stream *)
-    ex	: ('s->'b) option;
+    ex	: ('s->'a) option;
     (** Return/done continuation, used for efficient implementation of
 	bind. *)
-    ret : 'b -> ('el,'a) t;
+    ret : 'a -> ('el,'b) t;
     (** Generalized continuation function. *)
-    k	: 't1 't2 . 's->'el->('b->'t)->'t->(('t1,'t2) t as 't)
-  }						-> ('el,'a) t
+    k	: 't1 't2 . 's->'el->('a->'t)->'t->(('t1,'t2) t as 't)
+  }						-> ('el,'b) t
 
   (** A captured exception with a position descriptor *)
   | Error : error				-> ( _, _) t
@@ -80,6 +80,8 @@ val recur :
   ?extract:('s->'a) ->
   ('s,'el,'a) k ->
   ('el,'a) t
+
+(*__________________________________________________________________________*)
 
 (*__________________________________________________________________________*)
 
