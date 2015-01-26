@@ -114,4 +114,4 @@ val fold : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
 val iter : ('a -> unit) -> 'a t -> unit
 
 (** *)
-val enum : 'a t -> ('a,'b) Iteratee.t -> 'b
+(* val enum : 'a t -> ('a,'b) Iteratee.t -> 'b *)
