@@ -8,7 +8,7 @@ type (_,_) t =
   | SRecur : {
     s	: 's;
     cp	: 's->'s;
-    ex	: ('s->'a) option;
+    ex	: 's->'a option;
     ret : 'a -> ('el,'b) t;
     k	: 't1 't2 . 's->'el->('a->'t)->'t->(('t1,'t2) t as 't)
   }						-> ('el,'b) t
@@ -31,6 +31,8 @@ type ('elo,'eli,'a) enumeratee = ('eli,'a) t -> ('elo,('eli,'a) t) t
 external id : 'a -> 'a = "%identity"
 
 let return o = Done o
+
+let nonterm : _ -> _ option = fun _ -> None
 
 let recur :
     state:'s ->

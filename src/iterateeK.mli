@@ -23,13 +23,19 @@ type (_,_) t =
     (** Copy state *)
     cp	: 's->'s; 
     (** Extract result from state at end of stream *)
-    ex	: ('s->'a) option;
+    ex	: 's->'a option;
     (** Return/done continuation, used for efficient implementation of
 	bind. *)
     ret : 'a -> ('el,'b) t;
     (** Generalized continuation function. *)
     k	: 't1 't2 . 's->'el->('a->'t)->'t->(('t1,'t2) t as 't)
   }						-> ('el,'b) t
+
+  (* | FRecur : { *)
+  (*   ... *)
+  (*   ret : 'a -> ('el,'c) t; *)
+  (*   k : 't1 't2 'a . 's -> 'a -> 'el -> ('b->'t) -> ('a->'t) -> (('t1,'t2) t as 't) *)
+  (* } -> ('el,'c) t *)
 
   (** A captured exception with a position descriptor *)
   | Error : error				-> ( _, _) t
@@ -74,10 +80,12 @@ val bind	: ('e,'a) t -> ('a -> ('e,'b) t) -> ('e,'b) t
 
 (*__________________________________________________________________________*)
 
+val nonterm : _ -> _ option
+
 val recur :
   state:'s ->
   ?copy:('s->'s) ->
-  ?extract:('s->'a) ->
+  ?extract:('s->'a option) ->
   ('s,'el,'a) k ->
   ('el,'a) t
 
@@ -100,5 +108,5 @@ val finish0 : (_,'a) t -> 'a
 
 (**/*)
 
-(* val copy : 't -> ((_,_) t as 't) *)
+val copy : 't -> ((_,_) t as 't)
 
