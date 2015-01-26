@@ -1,4 +1,4 @@
-default: test-it
+default: it-proto
 
 sexpr-proto:
 	ocamlbuild sexpr_Prototype.native
@@ -13,9 +13,13 @@ prof-it:
 	@echo "Make: Compilation done. Starting profile..."
 	./profileIteratee.native
 
+stream-proto:
+	ocamlbuild stream.native
+	./stream.native
+
 it-proto:
-	ocamlbuild iterateeK.native
-	./iterateeK.native
+	ocamlbuild iterateeK_Prototype.native
+	./iterateeK_Prototype.native
 
 pp-proto:
 	ocamlbuild prettyPrinting_Prototype.native
