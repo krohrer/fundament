@@ -10,7 +10,7 @@ val map		: ('e->'f) -> ('f,'a) t -> ('e,'a) t
 val filter	: ('e->bool) -> ('e,'a) t -> ('e,'a) t
 val filter_map	: ('e->'f option) -> ('f,'a) t -> ('e,'a) t
 
-val limit	: int -> ('e,'a) t -> ('e,('e,'a) t) t
+val limit	: int -> ('e,'a) t -> ('e,'e,'a) IterateeK.enumeratee
 
 val iter	: ('e -> unit) -> ('e,unit) t
 

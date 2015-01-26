@@ -37,6 +37,8 @@ module Limit =
     (* 			mutable i : int; *)
     (* 			mutable it : ('el,'a) t } *)
 
+    let it n = failwith "TODO"
+
     (* let copy { i; n; it } = { i; n; it } *)
 
     (* let rec it n = function *)
@@ -68,7 +70,7 @@ module Limit =
     (* 	s.it *)
   end
 
-let limit n = failwith "TODO"
+let limit n = Limit.it n
 
 (*__________________________________________________________________________*)
 
