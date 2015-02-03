@@ -18,8 +18,8 @@ stream-proto:
 	./stream.native
 
 it-proto:
-	ocamlbuild iterateeK_Prototype.native
-	./iterateeK_Prototype.native
+	ocamlbuild iterii_Prototype.native
+	./iterii_Prototype.native
 
 pp-proto:
 	ocamlbuild prettyPrinting_Prototype.native
@@ -42,9 +42,13 @@ test:
 	ocamlbuild testVector.byte
 	./testVector.byte
 
+scratch.cmm:
+	ocamlbuild scratch.cmx
+	ocamlopt -I _build -dcmm scratch.ml 2> scratch.cmm
+
 # vector.cmm:
 # 	ocamlbuild vector.cmx
-# 	ocamlopt -I _build -dcmm vector.ml 2> vector.dcmm
+# 	ocamlopt -I _build -dcmm vector.ml 2> vector.cmm
 
 vector.native: vector.mli vector.ml
 	ocamlbuild vector.native
