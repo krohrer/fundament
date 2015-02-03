@@ -1,3 +1,22 @@
+(*__________________________________________________________________________*)
+(*  *)
+
+module type M = sig type s end
+
+type 's m = (module M with type s = 's)
+
+type t =
+  | Mod : { x : 's m } -> t
+
+module M =
+  struct
+    type s = bool ref
+  end
+
+let _ = Mod { x = (module M) }
+
+(*__________________________________________________________________________*)
+
 module type It_Recur =
   sig
     type e
@@ -10,7 +29,7 @@ module type It_Recur =
     val return : r -> t
     val error : IterateeK.error -> t
 
-    val k : s -> e -> (r->t) -> t -> t
+    val k : s -> e -> t -> (r->t) -> (IterateeK.error -> t) -> t
   end
 
 module Limitee (I : It_Recur) : (It_Recur with type e = I.e
@@ -27,13 +46,13 @@ module Limitee (I : It_Recur) : (It_Recur with type e = I.e
 
     let copy { i; n; inns } = { i; n; inns = I.copy inns }
 
-    let extract { inns; _ } = IterateeK.SRecur {
+    let extract { inns; _ } = Some (IterateeK.SRecur {
       s = inns;
       cp = I.copy;
       ex = I.extract;
       ret = I.return;
       k = I.k
-    }
+    })
 
     let return x = I.return x
 

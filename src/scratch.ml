@@ -1,3 +1,25 @@
+module type M = sig
+  type s
+  val x : s ref
+  val y : int
+end
+
+type 's m = (module M with type s = 's)
+
+type t =
+  | Mod : { x : 's m } -> t
+
+module M =
+  struct
+    type s = bool
+    let x = ref true
+    let y = 0
+  end
+
+(* let _ = Mod { x = (module M) } *)
+
+
+(*
 module type S =
   sig
     val str : string -> unit
@@ -35,3 +57,4 @@ module Run (P : S) () =
 
 type (_,_,_) t =
   | Init : (_ -> 't) -> ((_,_,_) t as 't)
+*)
