@@ -131,13 +131,13 @@ let to_list =
   let k el =
     let s = ref [el]
     and cp s = ref !s
-    and ex s = List.rev !s
+    and ex s = Some (List.rev !s)
     and ret o = return o
     and k s el _ cont =
       s := el :: !s;
       cont
     in
-    SRecur {s;cp;ex=Some ex;ret;k}
+    SRecur {s;cp;ex=ex;ret;k}
   in
   Cont k
 
@@ -147,13 +147,13 @@ let fold1 f =
   let k el =
     let s = ref el
     and cp s = ref !s
-    and ex s = !s
+    and ex s = Some !s
     and ret = return
     and k s el _ cont =
       s := f !s el;
       cont
     in
-    SRecur {s;cp;ex=Some ex;ret;k}
+    SRecur {s;cp;ex;ret;k}
   in
   Cont k
 
@@ -162,13 +162,13 @@ let fold1 f =
 let fold f a =
   let s = ref a
   and cp s = s
-  and ex s = !s
+  and ex s = Some !s
   and ret o = Done o
   and k s x _ cont =
     s := f !s x;
     cont
   in
-  SRecur {s;cp;ex=Some ex;ret;k}
+  SRecur {s;cp;ex=ex;ret;k}
 
 (*__________________________________________________________________________*)
 
@@ -177,7 +177,7 @@ let iter f =
     SRecur {
       s=();
       cp=id;
-      ex=Some id;
+      ex=(fun () -> Some ());
       ret=(fun () -> Done ());
       k=fun s el _ cont ->
 	f el;
@@ -207,7 +207,7 @@ module All_of =
 
     let copy { accum; pred } = { accum; pred }
 
-    let extract { accum; _ } = accum
+    let extract { accum; _ } = Some accum
 
     let continuation s el return recur =
       if s.pred el then

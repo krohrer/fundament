@@ -174,15 +174,15 @@ let profile_array =
 	SRecur {
 	  s=ref 0;
 	  cp=(fun s -> s);
-	  ex=(!);
+	  ex=(fun s -> Some !s);
 	  ret=return;
 	  k=fun st el ret cont ->
 	    st := operation !st el;
 	    cont
 	}
       in
-      execute
-	~source:(enum_array int_array)
+      EnumerateeK.execute
+	~source:(EnumeratorK.from_array int_array)
 	~query:it
 	~on_done:cont_with_result
 	());
@@ -193,13 +193,14 @@ let profile_array =
 	sum := operation !sum i;
 	it)
       in
-      (enum_array int_array) it;
+      let _ = (EnumeratorK.from_array int_array) it in
       cont_with_result !sum
     );	
   profile_case "Array/eek+fold"
     IterateeK.(fun () ->
+      let open EnumerateeK in
       execute
-	~source:(enum_array int_array)
+	~source:(EnumeratorK.from_array int_array)
 	~query:(fold operation 0)
 	~on_done:cont_with_result
 	());
@@ -287,23 +288,25 @@ let profile_list =
 	SRecur {
 	  s=ref 0;
 	  cp=(fun s -> s);
-	  ex=(!);
+	  ex=(fun s -> Some !s);
 	  ret=return;
 	  k=fun st el done_k recur ->
 	    st := operation !st el;
 	    recur
 	}
       in
+      let open EnumerateeK in
       execute
-	~source:(enum_list int_list)
+	~source:(EnumeratorK.from_list int_list)
 	~query:it
 	~on_done:cont_with_result
 	());
   profile_case
     "List/eek+from-fold"
     IterateeK.(fun () ->
+      let open EnumerateeK in
       execute
-	~source:(enum_list int_list)
+	~source:(EnumeratorK.from_list int_list)
 	~query:(fold operation 0)
 	~on_done:cont_with_result
 	());

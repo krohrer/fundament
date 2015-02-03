@@ -37,14 +37,14 @@ let nonterm : _ -> _ option = fun _ -> None
 let recur :
     state:'s ->
   ?copy:('s->'s) ->
-  ?extract:('s->'a) ->
+  ?extract:('s->'a option) ->
   ('s,'el,'a) k ->
   ('el,'a) t
   =
   fun
     ~state
     ?(copy=id)
-    ?extract
+    ?(extract=nonterm)
     { continuation }
 ->
   SRecur {
@@ -75,11 +75,14 @@ let rec step0 it el =
   | SRecur {s;ret;k} as it	-> k s el ret it
 
 let rec finish done_k err_k part_k = function
-  | Done out			-> done_k out
-  | Cont _ as it		-> part_k it
-  | SRecur {s;ex=Some ex;ret;_}	-> finish done_k err_k part_k (ret (ex s))
-  | SRecur {s;ex=None;_} as it	-> part_k it
-  | Error err			-> err_k err
+  | Done out				-> done_k out
+  | Error err				-> err_k err
+  | Cont _ as it			-> part_k it
+  | SRecur {s;ex=ex;ret;_} as it	-> (
+    match ex s with
+    | None -> part_k it
+    | Some out -> finish done_k err_k part_k (ret out)
+  )
 
 let error_raise (_,exc) = raise exc
 let raise_divergence _ = raise Divergence

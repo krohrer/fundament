@@ -21,7 +21,7 @@ external id : 'a -> 'a = "%identity"
 
 let it =  SRecur { s=();
 		   cp=id;
-		   ex=None;
+		   ex=nonterm;
 		   ret=return;
 		   k=fun s el ret cont -> Error ("meh", Exit) }
 
