@@ -5,11 +5,6 @@ type ('position,'element,'result) t =
 
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
 
-  | Cont1 : {
-    k1	       	: 'p -> 'e -> 't;
-    k0		: 'r -> 't
-  } -> (('p,'e,'r) t as 't) 
-
   | Recur : {
     state	: 's;
     copy	: 's -> 's;
@@ -30,8 +25,6 @@ let return o = Done o
 
 let nonterm : _ -> _ option = fun _ -> None
 
-(*let recur*)
-
 (*__________________________________________________________________________*)
 
 exception Divergence = IterateeK.Divergence
@@ -40,24 +33,62 @@ let error p exn = Error (Some p, exn)
 
 let step
     ~(fin:'r -> 'w)
-    ~(err:'p -> exn -> 'w)
+    ~(err:'p option -> exn -> 'w)
     ~(cont:'t -> 'w)
-    pos elem = function
-    | Done out		-> fin out
-    | Error (popt, exn) -> err popt exn
-    | Cont k		-> cont (k pos elem)
-    | Cont1 {k1;_}	-> k1 pos elem
-    | Recur {state;return;k} as recur
-      			-> cont (k state pos elem return error recur)
+    pos elem =
+  function
+  | Done out				-> fin out
+  | Error (popt, exn)			-> err popt exn
+  | Cont k				-> cont (k pos elem)
+  | Recur {state;return;k} as recur	-> cont (k state pos elem return error recur)
   
 let step0 pos elem = function
   | Done _
-  | Error _ as recur	-> recur
-  | Cont k		-> k pos elem
-  | Cont1 {k1;_}	-> k1 pos elem
-  | Recur {state;return;k} as recur
-			-> k state pos elem return error recur
-(* val finish : fin:('r -> 'w) -> err:('p option -> exn -> 'w) -> cont:('t -> 'w) -> ((_,_,'r) t as 't) -> 'w *)
-(* val finish0 : (_,_,'r) t -> 'r *)
+  | Error _ as recur			-> recur
+  | Cont k				-> k pos elem
+  | Recur {state;return;k} as recur	-> k state pos elem return error recur
+
+let rec finish
+    ~(fin:'r -> 'w)
+    ~(err:'p option -> exn -> 'w)
+    ~(cont:('p,_,'r) t -> 'w) =
+  function
+  | Done out		-> fin out
+  | Error (popt,exn)	-> err popt exn
+  | Cont k as it	-> cont it
+
+  | Recur {state;extract;return;_} as it -> (
+    match extract state with
+    | None -> cont it
+    | Some out -> finish ~fin ~err ~cont (return out)
+  )
+
+let error_raise _ x = raise x
+let raise_divergence _ = raise Divergence
+
+let finish0 it =
+  finish ~fin:id ~err:error_raise ~cont:raise_divergence it
+
+(*__________________________________________________________________________*)
+
+let rec bind it f =
+  match it with
+  | Done out -> f out
+
+  | Error _ as err -> err
+
+  | Cont k ->
+    
+    let k p el =
+      bind (k p el) f
+    in
+    Cont k
+
+  | Recur r ->
+    
+    let return o =
+      bind (r.return o) f
+    in
+    Recur {r with return; state = r.copy r.state}
 
 (*__________________________________________________________________________*)

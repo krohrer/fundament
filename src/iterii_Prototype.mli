@@ -5,10 +5,10 @@ type ('position,'element,'result) t =
 
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
 
-  | Cont1 : {
-    k1	       	: 'p -> 'e -> 't;
-    k0		: 'r -> 't
-  } -> (('p,'e,'r) t as 't) 
+  (* | Cont1 : { *)
+  (*   extract	: unit -> 'r *)
+  (*   k	       	: 'p -> 'e -> 't *)
+  (* } -> (('p,'e,'r) t as 't) *)
 
   | Recur : {
     state	: 's;
@@ -31,10 +31,10 @@ val bind	: ('a,'b,'c) t -> ('c -> ('a,'b,'d) t) -> ('a,'b,'d) t
 
 exception Divergence
 
-val step : fin:('r -> 'w) -> err:('p -> 'e -> 'w) -> cont:('t -> 'w) -> 'p -> 'e -> ('p,'e,'r) t -> 'w
-val step0 : ('p,'e,'r) t -> 'p -> 'e -> ('p,'e,'r) t
+val step : fin:('r -> 'w) -> err:('p option -> exn -> 'w) -> cont:('t -> 'w) -> 'p -> 'e -> (('p,'e,'r) t as 't) -> 'w
+val step0 : 'p -> 'e -> ('p,'e,'r) t -> ('p,'e,'r) t
 
-val finish : fin:('r -> 'w) -> err:('p option -> exn -> 'w) -> cont:('t -> 'w) -> ((_,_,'r) t as 't) -> 'w
+val finish : fin:('r -> 'w) -> err:('p option -> exn -> 'w) -> cont:('t -> 'w) -> (('p,_,'r) t as 't) -> 'w
 val finish0 : (_,_,'r) t -> 'r
 
 (*__________________________________________________________________________*)
