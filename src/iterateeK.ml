@@ -110,9 +110,6 @@ let rec bind i fi =
   | Done o -> fi o
   | Error _ as it -> it
 
-let propagate_error e = Error e
-let propagate_result o = Done o
-
 (*__________________________________________________________________________*)
 
 let copy = function
