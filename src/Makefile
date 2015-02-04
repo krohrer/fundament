@@ -18,8 +18,8 @@ stream-proto:
 	./stream.native
 
 it-proto:
-	ocamlbuild iterii_Prototype.native
-	./iterii_Prototype.native
+	ocamlbuild iterateeIK.native
+	./iterateeIK.native
 
 pp-proto:
 	ocamlbuild prettyPrinting_Prototype.native
