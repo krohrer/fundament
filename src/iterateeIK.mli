@@ -31,6 +31,8 @@ val bind	: ('a,'b,'c) t -> ('c -> ('a,'b,'d) t) -> ('a,'b,'d) t
 
 exception Divergence
 
+val error : 'p -> exn -> ('p,_,_) t
+
 val step : fin:('r -> 'w) -> err:('p option -> exn -> 'w) -> cont:('t -> 'w) -> 'p -> 'e -> (('p,'e,'r) t as 't) -> 'w
 val step0 : 'p -> 'e -> ('p,'e,'r) t -> ('p,'e,'r) t
 

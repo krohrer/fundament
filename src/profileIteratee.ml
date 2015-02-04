@@ -204,6 +204,21 @@ let profile_array =
 	~query:(fold operation 0)
 	~on_done:cont_with_result
 	());
+  profile_case "Array/eeik+inline"
+    IterateeIK.(fun () ->
+      let it =
+	Recur {
+	  state=ref 0;
+	  copy=(fun s -> s);
+	  extract=(fun s -> Some !s);
+	  return;
+	  k=fun st pos el ret err recur ->
+	    st := operation !st el;
+	    recur
+	}
+      in
+      finish0 (EnumeratorIK.from_array int_array it) |>
+	  cont_with_result );
   ()
 
 let profile_list =
@@ -310,4 +325,20 @@ let profile_list =
 	~query:(fold operation 0)
 	~on_done:cont_with_result
 	());
+  profile_case
+    "List/eeik+inline"
+    IterateeIK.(fun () ->
+      let it =
+	Recur {
+	  state=ref 0;
+	  copy=(fun s -> s);
+	  extract=(fun s-> Some !s);
+	  return;
+	  k=fun st pos el ret err recur ->
+	    st := operation !st el;
+	    recur
+	}
+      in
+      EnumeratorIK.from_list int_list it |> finish0 |> cont_with_result
+    );
   ()
