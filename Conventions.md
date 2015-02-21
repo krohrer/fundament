@@ -32,6 +32,7 @@ Fundament library. Rules are open to discussion with Kaspar Rohrer.
 *  Type modules
    * Have a type t
    * And associated operations, e.g. pretty printing
+   
 
 ## Development Process
 

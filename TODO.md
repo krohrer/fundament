@@ -56,7 +56,7 @@ A very rough list of open issues:
   
 ## Open Questions / Status Reports
 
-** What is the status of enumerators and enumeratees? **
+**What is the status of enumerators and enumeratees?**
 
 More and more I feel that the enumerator and enumeratee don't hold up
 in an unpure world.
