@@ -9,6 +9,13 @@ evolution of the Fundament library.
 
 A very rough list of open issues:
 
+- [ ] Write pretty printer iteratees/enumeratees
+  - [ ] See scratch-book for further details.
+  - [ ] for ANSI-Escaped text
+  - [ ] for Markdown
+  - [ ] for Sexpr
+  - [ ] for ...
+
 - [ ] Write Dynamometer library with current interface
   - [ ] finish DSL implementation, see Dynamometer module.
   - [ ] Write examples
@@ -33,12 +40,6 @@ A very rough list of open issues:
 	  - [ ] Harmonize Iteratee* variants.
 
 - [ ] Write unit tests and examples for IterateeK.
-
-- [ ] Write pretty printer iteratees/enumeratees
-  - [ ] for ANSI-Escaped text
-  - [ ] for Markdown
-  - [ ] for Sexpr
-  - [ ] for ...
 
 - [ ] Decide what to include in this library:
   * The basic stuff
@@ -86,9 +87,10 @@ Iteratees. And pretty printer programs as enumerators.
 
 *What's the status for pretty printing?**
 
-For pretty printing, a DSL approach for higher level Additionally
-printing final-typed-tagless interpreters in the form of functors are
-probably a good idea to provide
+For pretty printing, a DSL approach.
+
+Final-typed-tagless interpreters in the form of
+functors are probably a good idea.
 
 **What's the status for enumees/iteratees?**
 
