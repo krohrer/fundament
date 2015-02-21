@@ -1,5 +1,5 @@
 Conventions
-===========
+========================================================================
 
 An overview of the guidelines that should ideally be followed for the
 Fundament library. Rules are open to discussion with Kaspar Rohrer.
