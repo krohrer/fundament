@@ -1,36 +1,38 @@
-# Fundament library with
-	* The basic stuff
-	* sequences / transformations
-	  * generation / iteration
-	  * production / consumption.
-	  * iteratees / enumerators / enumeratee / ...
-	* Various DSL for doing pretty printing based on the above
-	  - Printing interfaces vs. implementations
-	* Colored, justified, possibly hyphenated, tabulated, quoted,
-      preformatted, ANSI escape code based - text output using Aesq
-      iteratee.
-	* Not sure about the parsing yet.
-	
-## Prerequisites
+Things to Do
+========================================================================
 
-I use embedded records and (G)ADTs, so OCaml 4.03 will be needed (for
-the records). Just do an opam switch to the latest (development)
-version.
-	
+A collection of snippets and ideas concerning the improvement and
+evolution of the Fundament library.
+
 ## Pinboard
+
+A very rough list of open issues:
+
+- Pretty printing
+  * as a functor
+  * ...
 
 - Write Dynamometer library with current interface
   * finish DSL
-  * pretty printing as a functor!
+  * Write examples
+	- [_] Which is faster:
+	
+		let f x y = match y with ...
+		
+		let f x = function ...
 
 - Finalize interatee interface and operators (See IterateeK)
   - [X] Avoid closures as it allocates on the heap.
 	  - [X] At the cost of mutable style
   - [X] Use continuation passing style.
-  - [X] Semantics of concatenation/composition?
+  - [_] Semantics of concatenation/composition?
 	  - [X] Monadic operations
 	  - [X] Higher-order operations (map,fold,filter,iter)
 	  - [X] Function composition for catenation of enumerators.
+  - [_] Use first class modules for better error reporting
+  - [_] Write a variant of iterateeK that takes positions/indices as well
+	  - See IterateeIK
+	  - [_] Harmonize Iteratee* variants.
 
 - Write unit tests and examples for IterateeK.
 
@@ -39,96 +41,29 @@ version.
   * for Markdown
   * for Sexpr
   * for ...
-  
-## Development Process
 
-- Development for new features should go like this:
-  1. scratch.ml file first
-  2. separate source file with "_Prototype.ml" suffix and makefile
-     target (use the same name for the makefile as for the git branch).
-  3. unit of files with tests and profiling
-  4. separate library
-  
-## Coding conventions
+- Decide what to include in this library:
+  * The basic stuff
+  * sequences / transformations
+	- generation / iteration
+	- production / consumption.
+	- iteratees / enumerators / enumeratee / ...
+  * Various DSL for doing pretty printing based on the above
+	- Printing interfaces vs. implementations
+  * Colored, justified, possibly hyphenated, tabulated, quoted,
+    preformatted, ANSI escape code based - text output using Aesq
+    iteratee.
+  * Not sure about the parsing yet.
+		
+## Idea freezer
 
-TODO: Move to separate document.
+Storage for bigger ideas.
 
-* Types of names:
-	- Mnemonic: 1-3 letters
-	- Brief : 2~5 letters
-	- Long : 5~10 letters
-	- Full : descriptive name with however many letters it takes
+### Blog
 
-* Use short names for type variables, e.g. ('a->'b) -> 'b->'a
+I should maybe blog about this?
 
-*  Type modules
-   * Have a type t
-   * And associated operations, e.g. pretty printing
-
-## FAQ / Ideas
-
-Q: Why the name "fundament"?
-
-	A: Originally, I used "foundation" as a name, but the objective-c
-    base library for Apple's "OS X" and "iOS" already has the same
-    name.
-	
-	And because "fundament" is a word in German and English. It also
-    sounds super cool.
-	
-Q: What is the deal with those iteratees?
-	
-	A: Originally, I had the idea of higher order functions for
-    collections of objects that either consume or produce a stream of
-    elements.
-	
-	After playing around for a bit, I decided to revisit Oleg's paper
-    on Iteratees, which certainly inspired me in the first place.
-	
-	They provide a nice abstraction over sequences of objects with
-    built-in resource management and error handling/reporting, can be
-    reasonably fast with a few adaptions, and can be used instead of
-    lists for the writers and pretty printers.
-	
-Q: Maybe I should package individual components in the fundament
-library separately?
-	
-	A: Since this is still in the prototyping stage and I am the sole
-    user, I simply do not see the need (yet).
-
-Q: What's the status as of 26.12.2014? for enumees/iteratees
-
-	A: The Iteratee module as it stands seems to offer a performant
-    way (based on some kind of continuation-passing style to reduce
-    heap-memory allocations)[1] to iterate/fold/... over sequences of
-    elements with automatic resource management.
-	
-	I'm probably going with composable, unpure system (hm,
-    kind of an oxymoron). Maybe concatenable would be the better word?
-
-[1]: Profiled with dynamometer precursor in ProfileEnumee.
-
-Q: What are enumees / iteratees?
-
-	A: The iteratee concept adapted to the impure world of OCaml,
-	using continuations and recursive types to avoid unnecessary
-	allocations.  See profiling. After some microprofiling of
-	different approaches, i am now almost certain that the approach in
-	the current IterateeK module is the best one.
-	
-	Enumees were the first prototypes that only used recursive
-    function types and thus were less powerfull than the current
-    IterateeK variant.
-
-Q: Should we model pretty printers as enumerators or iteratees?
-
-	A: Iteratees. And pretty printer programs as enumerators.
-
-## Idea storage:
-
-Q: Maybe I should blog about this?
-
-A: Titles of articles (The blog as a program with source-code quotations from the OCaml compiler output):
+Titles of articles (The blog as a program with source-code quotations from the OCaml compiler output):
 
 	- Fast, continuation-based, (composable?) constant-space iteratees
     in OCaml. Part (1)
@@ -155,7 +90,11 @@ A: Titles of articles (The blog as a program with source-code quotations from th
 		- expression-based pretty printer
 		- how can we model recursion using iteratees?
 		
-Q: The blog as an ever evolving, versioned program.
+Ideally, I would like an OCaml based blogging framework for static site generation.
+* Disable dynamic site features for github upload.
+* Enable dynamic site features when deploying to the cloud.
+		
+The blog as an ever evolving, versioned program.
 
 	Running the program with different interpreters generates
     different results.
@@ -181,7 +120,11 @@ Q: The blog as an ever evolving, versioned program.
 	Needs bootstraping to work?
 
 
-## Graveyard of ideas:
+## Trashcan
+
+Feel free to recover stuff in here from version control.
+
+...Snip...
 
 Q: Maybe if certain functions could be tagged to be tailrecursive?
 With attributes in the compiler?
@@ -201,3 +144,5 @@ With attributes in the compiler?
 A: Not sure it is worth the effort. Feeling that it can be modeled
 using types instead.
 
+A2: Certainly not worth to invest too much time on my own here, unless
+it is a preexisting solution, either ocamlp4 or using attributes.
