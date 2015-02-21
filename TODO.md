@@ -38,7 +38,7 @@ A very rough list of open issues:
   - [ ] for Sexpr
   - [ ] for ...
 
-[ ] Decide what to include in this library:
+- [ ] Decide what to include in this library:
   * The basic stuff
   * sequences / transformations
 	- generation / iteration
