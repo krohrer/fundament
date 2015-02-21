@@ -8,41 +8,37 @@ evolution of the Fundament library.
 
 A very rough list of open issues:
 
-- Pretty printing
-  * as a functor
-  * ...
-
-- Write Dynamometer library with current interface
-  * finish DSL
-  * Write examples
-	- [_] Which is faster:
+- [ ] Write Dynamometer library with current interface
+  - [ ] finish DSL implementation, see Dynamometer module.
+  - [ ] Write examples
+	- [ ] Which is faster:
 	
-		let f x y = match y with ...
+			let f x y = match y with ...
 		
-		let f x = function ...
+			let f x = function ...
 
-- Finalize interatee interface and operators (See IterateeK)
+- [ ] Finalize interatee interface and operators (See IterateeK)
   - [X] Avoid closures as it allocates on the heap.
 	  - [X] At the cost of mutable style
   - [X] Use continuation passing style.
-  - [_] Semantics of concatenation/composition?
+  - [ ] Semantics of concatenation/composition?
 	  - [X] Monadic operations
 	  - [X] Higher-order operations (map,fold,filter,iter)
 	  - [X] Function composition for catenation of enumerators.
-  - [_] Use first class modules for better error reporting
-  - [_] Write a variant of iterateeK that takes positions/indices as well
+  - [ ] Use first class modules for better error reporting
+  - [ ] Write a variant of iterateeK that takes positions/indices as well
 	  - See IterateeIK
-	  - [_] Harmonize Iteratee* variants.
+	  - [ ] Harmonize Iteratee* variants.
 
-- Write unit tests and examples for IterateeK.
+- [ ] Write unit tests and examples for IterateeK.
 
-- Write pretty printer iteratees/enumeratees
-  * for ANSI-Escaped text
-  * for Markdown
-  * for Sexpr
-  * for ...
+- [ ] Write pretty printer iteratees/enumeratees
+  - [ ] for ANSI-Escaped text
+  - [ ] for Markdown
+  - [ ] for Sexpr
+  - [ ] for ...
 
-- Decide what to include in this library:
+[ ] Decide what to include in this library:
   * The basic stuff
   * sequences / transformations
 	- generation / iteration
