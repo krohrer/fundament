@@ -31,8 +31,8 @@ test-it:
 
 dump:
 	@echo "Make: Dumping CMM"
-	ocamlopt -rectypes -I _build -dcmm enumee.ml 2> enumee.dcmm
-	ocamlopt -rectypes -I _build -dcmm profileEnumee.ml 2> profileEnumee.dcmm
+	ocamlbuild -cflags -rectypes profileIteratee.cmx
+	ocamlopt -rectypes -I _build -dcmm profileIteratee.ml #2> profileIteratee.cmm
 
 scratch:
 	ocamlbuild -cflags -rectypes scratch.native

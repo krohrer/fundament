@@ -9,26 +9,26 @@ let (+++) e1 e2 = fun it ->
   | Done _
   | Error _ as it -> it
   | Cont _
-  | SRecur _ as it -> e2 it
+  | Recur _ as it -> e2 it
 
 let rec from_list list it =
   match list with
   | [] -> it
   | x::rest ->
     match it with
-    | Cont k			-> from_list rest (k x)
-    | SRecur {s;k;ret;_} as it	-> from_list rest (k s x ret it)
     | Done _
-    | Error _ as it		-> it
+    | Error _ as it	-> it
+    | Cont k		-> from_list rest (k x)
+    | Recur r as it	-> from_list rest (r.k r.state x r.return error it)
 
 let rec from_array' arr i n it =
   let i = i + 1 in
   if i < n then
     match it with 
-    | Cont k			-> from_array' arr i n (k arr.(i))
-    | SRecur {s;k;ret;_} as it	-> from_array' arr i n (k s arr.(i) ret it)
     | Done _
-    | Error _ as it		-> it
+    | Error _ as it	-> it
+    | Cont k		-> from_array' arr i n (k arr.(i))
+    | Recur r as  it	-> from_array' arr i n (r.k r.state arr.(i) r.return error it)
   else
     it
       

@@ -1,26 +1,19 @@
 (*__________________________________________________________________________*)
 
-type (_,_) t = 
-  | Done : 'a					->  ( _,'a) t
+type ('element,'result) t = 
+  | Done : 'r					->  ( _,'r) t
 
-  | Cont :  ('el->('el,'a) t)			-> ('el,'a) t
+  | Error : exn					-> ( _, _) t
 
-  | SRecur : {
-    s	: 's;
-    cp	: 's->'s;
-    ex	: 's->'a option;
-    ret : 'a -> ('el,'b) t;
-    k	: 't1 't2 . 's->'el->('a->'t)->'t->(('t1,'t2) t as 't)
-  }						-> ('el,'b) t
+  | Cont :  ('e -> ('e,'r) t)			-> ('e,'r) t
 
-  | Error : error				-> ( _, _) t
-
-and error = pos * exn
-and pos = string
-
-and ('s,'el,'b) k = {
-  continuation : 't1 't2 . 's->'el->('b->'t)->'t->(('t1,'t2) t as 't)
-}
+  | Recur : {
+    state	: 's;
+    copy	: 's -> 's; 
+    extract	: 's -> 'r option;
+    return	: 'r -> ('e,'r_cont) t;
+    k		: 'a. 's -> 'e -> ('r->'a) -> (exn->'a)  -> 'a -> 'a
+  }						-> ('e,'r_cont) t
 
 type ('el,'a) enumerator = ('el,'a) t -> ('el,'a) t
 
@@ -34,26 +27,26 @@ let return o = Done o
 
 let nonterm : _ -> _ option = fun _ -> None
 
-let recur :
-    state:'s ->
-  ?copy:('s->'s) ->
-  ?extract:('s->'a option) ->
-  ('s,'el,'a) k ->
-  ('el,'a) t
-  =
-  fun
-    ~state
-    ?(copy=id)
-    ?(extract=nonterm)
-    { continuation }
-->
-  SRecur {
-    s = state;
-    cp = copy;
-    ex = extract;
-    ret = return;
-    k = continuation
-  }
+(* let recur : *)
+(*     state:'s -> *)
+(*   ?copy:('s->'s) -> *)
+(*   ?extract:('s->'a option) -> *)
+(*   ('s,'el,'a) k -> *)
+(*   ('el,'a) t *)
+(*   = *)
+(*   fun *)
+(*     ~state *)
+(*     ?(copy=id) *)
+(*     ?(extract=nonterm) *)
+(*     { continuation } *)
+(* -> *)
+(*   Recur { *)
+(*     state; *)
+(*     copy; *)
+(*     extract; *)
+(*     return; *)
+(*     k = continuation *)
+(*   } *)
 
 (*__________________________________________________________________________*)
 
@@ -61,38 +54,52 @@ let recur :
     otherwise specified. *)
 exception Divergence
 
-let rec step done_k err_k part_k el = function
-  | Done out			-> done_k out
-  | Cont k			-> part_k (k el)
-  | SRecur {s;ret;k} as it	-> part_k (k s el ret it)
-  | Error err			-> err_k err
+let error exn = Error exn
 
-let rec step0 it el =
+let step ~ret_k ~err_k ~cont_k elem it =
+  match it with
+  | Done out		-> ret_k out
+  | Error e		-> err_k e
+  | Cont k		-> cont_k (k elem)
+  | Recur r as it	-> cont_k (r.k r.state elem r.return error it)
+
+(* let step0 el it = *)
+(*   match it with *)
+(*   | Done _ *)
+(*   | Error _ as it	-> it *)
+(*   | Cont k		-> k el *)
+(*   | Recur r as it	-> r.k r.state el r.return error it *)
+
+let step1 it el =
   match it with
   | Done _
-  | Error _ as it		-> it
-  | Cont k			-> k el
-  | SRecur {s;ret;k} as it	-> k s el ret it
+  | Error _ as it 	-> it
+  | Cont k		-> k el
+  | Recur r as it	-> r.k r.state el r.return error it
 
-let rec finish done_k err_k part_k = function
-  | Done out				-> done_k out
-  | Error err				-> err_k err
-  | Cont _ as it			-> part_k it
-  | SRecur {s;ex=ex;ret;_} as it	-> (
-    match ex s with
+let rec finish ~ret_k ~err_k ~part_k it =
+  match it with
+  | Done out		-> ret_k out
+  | Error err		-> err_k err
+  | Cont _ as it	-> part_k it
+  | Recur r as it	-> (
+    match r.extract r.state with
     | None -> part_k it
-    | Some out -> finish done_k err_k part_k (ret out)
+    | Some out -> finish ~ret_k ~err_k ~part_k (r.return out)
   )
 
-let error_raise (_,exc) = raise exc
 let raise_divergence _ = raise Divergence
 
-let finish0 it = finish id error_raise raise_divergence it
+let finish_exn it = finish ~ret_k:id ~err_k:raise ~part_k:raise_divergence it
 
 (*__________________________________________________________________________*)
 
 let rec bind i fi =
   match i with
+  | Done o -> fi o
+
+  | Error _ as it -> it
+
   | Cont k ->
 
     let k el =
@@ -100,27 +107,11 @@ let rec bind i fi =
     in
     Cont k
 
-  | SRecur {s;cp;ex;ret;k} ->
+  | Recur r ->
 
-    let ret o =
-      bind (ret o) fi
-    in
-    SRecur {s=cp s;cp;ex;ret;k}
+    let return o = bind (r.return o) fi in
+    let state = r.copy r.state in
 
-  | Done o -> fi o
-  | Error _ as it -> it
+    Recur {r with return; state}
 
 (*__________________________________________________________________________*)
-
-let copy = function
-  | SRecur {s;cp;ex;ret;k} as it ->
-
-    let s' = cp s in
-    if s' == s then
-      it
-    else
-      SRecur {s=cp s;cp;ex;ret;k}
-
-  | Done _
-  | Cont _
-  | Error _ as it -> it

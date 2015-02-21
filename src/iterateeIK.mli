@@ -1,3 +1,10 @@
+(** A variant of IterateeK with additional position information
+
+    Useful for iteri, foldi, mapi, parsers, ...
+
+    See IterateeK for further comments, for now.
+*)
+
 type ('position,'element,'result) t =
   | Done	: 'r -> (_,_,'r) t
 
@@ -5,18 +12,13 @@ type ('position,'element,'result) t =
 
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
 
-  (* | Cont1 : { *)
-  (*   extract	: unit -> 'r *)
-  (*   k	       	: 'p -> 'e -> 't *)
-  (* } -> (('p,'e,'r) t as 't) *)
-
   | Recur : {
     state	: 's;
     copy	: 's -> 's;
     extract	: 's -> 'r option;
-    return	: 'r -> ('p,'e,'r2) t;
+    return	: 'r -> ('p,'e,'r_cont) t;
     k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> ('p -> exn -> 'a) -> 'a -> 'a
-  } -> (('p,'e,'r2) t as 't)
+  } -> (('p,'e,'r_cont) t as 't)
 
 type ('p,'e,'r) enumerator = ('p,'e,'r) t -> ('p,'e,'r) t
 
@@ -33,10 +35,20 @@ exception Divergence
 
 val error : 'p -> exn -> ('p,_,_) t
 
-val step : fin:('r -> 'w) -> err:('p option -> exn -> 'w) -> cont:('t -> 'w) -> 'p -> 'e -> (('p,'e,'r) t as 't) -> 'w
-val step0 : 'p -> 'e -> ('p,'e,'r) t -> ('p,'e,'r) t
+val step :
+  ret_k:('r -> 'w) ->
+  err_k:('p option -> exn -> 'w) ->
+  cont_k:(('p,'e,'r) t -> 'w) ->
+  'p -> 'e -> (('p,'e,'r) t as 't) -> 'w
 
-val finish : fin:('r -> 'w) -> err:('p option -> exn -> 'w) -> cont:('t -> 'w) -> (('p,_,'r) t as 't) -> 'w
-val finish0 : (_,_,'r) t -> 'r
+val step1 : ('p,'e,'r) t -> 'p -> 'e -> ('p,'e,'r) t
+
+val finish :
+  ret_k:('r -> 'w) ->
+  err_k:('p option -> exn -> 'w) ->
+  part_k:('t -> 'w) ->
+  (('p,_,'r) t as 't) -> 'w
+
+val finish_exn : (_,_,'r) t -> 'r
 
 (*__________________________________________________________________________*)

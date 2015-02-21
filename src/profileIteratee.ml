@@ -1,5 +1,5 @@
-let times = 10
-let n = 1000*1000
+let times = 1000
+let n = 1000*100
 let burn_cycles = 10
 (* Prevent inlining, I guess: *)
 (* let rop = ref (+) *)
@@ -9,15 +9,15 @@ let burn_cycles = 10
 (*     ignore (a + b) *)
 (*   done *)
 (*   ;a + b *)
-let fmt =
-  let write _ _ _ = ()
-  and flush () = () in
-  Format.make_formatter write flush
+(* let fmt = *)
+(*   let write _ _ _ = () *)
+(*   and flush () = () in *)
+(*   Format.make_formatter write flush *)
 
-let operation a b =
-  let s = a + b in
-  Format.pp_print_int fmt s;
-  s
+(* let operation a b = *)
+(*   let s = a + b in *)
+(*   Format.pp_print_int fmt s; *)
+(*   s *)
 
 let operation = (+)
 
@@ -35,7 +35,51 @@ let cont_with_result =
   else 
     ignore
 
-let profile_array =
+type t = Inc | Dec
+
+let rec profile () =
+  List.iter ignore [
+    if true then begin
+      profile_function ()
+    end;
+    if false then begin
+      profile_iteratee_array ();
+      profile_iteratee_list ();
+    end]
+
+and profile_function () =
+  profile_case
+    "Funcall/all-in-one" (fun () ->
+      let cell = ref 0 in
+      let f i = function
+	| Inc -> cell := !cell + 1
+	| Dec -> cell := !cell - 1
+      in
+      for i = 1 to n do
+	f i Inc
+      done;
+      for i = n downto 1 do
+	f i Dec
+      done
+    );
+  profile_case 
+    "Funcall/fun-function" (fun () ->
+      let cell = ref 0 in
+      let f i op =
+	match op with
+	| Inc -> cell := !cell + 1
+	| Dec -> cell := !cell - 1
+      in
+      for i = 1 to n do
+	f i Inc
+      done;
+      for i = n downto 1 do
+	f i Dec
+      done
+    );
+  ()
+
+and profile_iteratee_array () =
   profile_case
     "Array/unfolded" 
     (fun () ->
@@ -171,21 +215,18 @@ let profile_array =
   profile_case "Array/eek+inline"
     IterateeK.(fun () ->
       let it =
-	SRecur {
-	  s=ref 0;
-	  cp=(fun s -> s);
-	  ex=(fun s -> Some !s);
-	  ret=return;
-	  k=fun st el ret cont ->
+	Recur {
+	  state=ref 0;
+	  copy=(fun s -> s);
+	  extract=(fun s -> Some !s);
+	  return;
+	  k=fun st el ret err cont ->
 	    st := operation !st el;
 	    cont
 	}
       in
-      EnumerateeK.execute
-	~source:(EnumeratorK.from_array int_array)
-	~query:it
-	~on_done:cont_with_result
-	());
+      finish_exn (EnumeratorK.from_array int_array it) |> cont_with_result
+    );
   profile_case "Array/eek+cont"
     IterateeK.(fun () ->
       let sum = ref 0 in
@@ -196,14 +237,21 @@ let profile_array =
       let _ = (EnumeratorK.from_array int_array) it in
       cont_with_result !sum
     );	
+  profile_case "Array/eeik+cont"
+    IterateeIK.(fun () ->
+      let sum = ref 0 in
+      let rec it = Cont (fun (_:int) i ->
+	sum := operation !sum i;
+	it)
+      in
+      let _ = (EnumeratorIK.from_array int_array) it in
+      cont_with_result !sum);
   profile_case "Array/eek+fold"
     IterateeK.(fun () ->
       let open EnumerateeK in
-      execute
-	~source:(EnumeratorK.from_array int_array)
-	~query:(fold operation 0)
-	~on_done:cont_with_result
-	());
+      finish_exn (EnumeratorK.from_array int_array (fold operation 0)) |>
+	  cont_with_result
+    );
   profile_case "Array/eeik+inline"
     IterateeIK.(fun () ->
       let it =
@@ -217,11 +265,11 @@ let profile_array =
 	    recur
 	}
       in
-      finish0 (EnumeratorIK.from_array int_array it) |>
+      finish_exn (EnumeratorIK.from_array int_array it) |>
 	  cont_with_result );
   ()
 
-let profile_list =
+and profile_iteratee_list () =
   profile_case
     "List/unfolded"
     (fun () -> 
@@ -300,31 +348,36 @@ let profile_list =
     "List/eek+inline"
     IterateeK.(fun () ->
       let it =
-	SRecur {
-	  s=ref 0;
-	  cp=(fun s -> s);
-	  ex=(fun s -> Some !s);
-	  ret=return;
-	  k=fun st el done_k recur ->
+	Recur {
+	  state=ref 0;
+	  copy=(fun s -> s);
+	  extract=(fun s -> Some !s);
+	  return=return;
+	  k=fun st el ret err cont ->
 	    st := operation !st el;
-	    recur
+	    cont
 	}
       in
       let open EnumerateeK in
-      execute
-	~source:(EnumeratorK.from_list int_list)
-	~query:it
-	~on_done:cont_with_result
-	());
+      finish_exn (EnumeratorK.from_list int_list it) |>
+	  cont_with_result
+    );
   profile_case
     "List/eek+from-fold"
     IterateeK.(fun () ->
       let open EnumerateeK in
-      execute
-	~source:(EnumeratorK.from_list int_list)
-	~query:(fold operation 0)
-	~on_done:cont_with_result
-	());
+      finish_exn (EnumeratorK.from_list int_list (fold operation 0)) |>
+	  cont_with_result
+      );
+  profile_case
+    "List/unfolded+index"
+    (fun () -> 
+      let rec loop i sum = function
+	| [] -> sum
+	| a::rest -> loop (i+1) (operation a sum) rest
+      in
+      loop 0 0 int_list |> cont_with_result
+    );
   profile_case
     "List/eeik+inline"
     IterateeIK.(fun () ->
@@ -339,6 +392,8 @@ let profile_list =
 	    recur
 	}
       in
-      EnumeratorIK.from_list int_list it |> finish0 |> cont_with_result
+      EnumeratorIK.from_list int_list it |> finish_exn |> cont_with_result
     );
   ()
+
+let () = profile ()

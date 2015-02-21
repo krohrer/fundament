@@ -9,9 +9,9 @@ type ('position,'element,'result) t =
     state	: 's;
     copy	: 's -> 's;
     extract	: 's -> 'r option;
-    return	: 'r -> ('p,'e,'r2) t;
+    return	: 'r -> ('p,'e,'r_cont) t;
     k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> ('p -> exn -> 'a) -> 'a -> 'a
-  } -> (('p,'e,'r2) t as 't)
+  } -> (('p,'e,'r_cont) t as 't)
 
 type ('p,'e,'r) enumerator = ('p,'e,'r) t -> ('p,'e,'r) t
 
@@ -31,43 +31,36 @@ exception Divergence = IterateeK.Divergence
 
 let error p exn = Error (Some p, exn)
 
-let step
-    ~(fin:'r -> 'w)
-    ~(err:'p option -> exn -> 'w)
-    ~(cont:'t -> 'w)
-    pos elem =
-  function
-  | Done out				-> fin out
-  | Error (popt, exn)			-> err popt exn
-  | Cont k				-> cont (k pos elem)
-  | Recur {state;return;k} as recur	-> cont (k state pos elem return error recur)
-  
-let step0 pos elem = function
+let step ~ret_k ~err_k ~cont_k pos elem it =
+  match it with
+  | Done out		-> ret_k out
+  | Error (popt, exn)	-> err_k popt exn
+  | Cont k		-> cont_k (k pos elem)
+  | Recur r as it	-> cont_k (r.k r.state pos elem r.return error it)
+    
+let step1 it pos elem =
+  match it with
   | Done _
-  | Error _ as recur			-> recur
-  | Cont k				-> k pos elem
-  | Recur {state;return;k} as recur	-> k state pos elem return error recur
+  | Error _ as it	-> it
+  | Cont k		-> k pos elem
+  | Recur r as it	-> r.k r.state pos elem r.return error it
 
-let rec finish
-    ~(fin:'r -> 'w)
-    ~(err:'p option -> exn -> 'w)
-    ~(cont:('p,_,'r) t -> 'w) =
-  function
-  | Done out		-> fin out
-  | Error (popt,exn)	-> err popt exn
-  | Cont k as it	-> cont it
-
-  | Recur {state;extract;return;_} as it -> (
-    match extract state with
-    | None -> cont it
-    | Some out -> finish ~fin ~err ~cont (return out)
+let rec finish ~ret_k ~err_k ~part_k it =
+  match it with
+  | Done out		-> ret_k out
+  | Error (popt,exn)	-> err_k popt exn
+  | Cont k as it	-> part_k it
+  | Recur r as it	-> (
+    match r.extract r.state with
+    | None -> part_k it
+    | Some out -> finish ~ret_k ~err_k ~part_k (r.return out)
   )
 
 let error_raise _ x = raise x
 let raise_divergence _ = raise Divergence
 
-let finish0 it =
-  finish ~fin:id ~err:error_raise ~cont:raise_divergence it
+let finish_exn it =
+  finish ~ret_k:id ~err_k:error_raise ~part_k:raise_divergence it
 
 (*__________________________________________________________________________*)
 

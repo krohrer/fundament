@@ -23,11 +23,11 @@ val all_of	: ('e->bool) -> ('e,bool) t
 val to_list	: ('e,'e list) t
 
 (** Query language *)
-val execute :
-  source:('el, 'out) EnumeratorK.t ->
-  query:('el,'out) t ->
-  on_done:('out -> 'r) ->
-  ?on_err:(IterateeK.error -> 'r) ->
-  ?on_div:(('el, 'out) t -> 'r) ->
-  unit -> 'r
+(* val execute : *)
+(*   source:('el, 'out) EnumeratorK.t -> *)
+(*   query:('el,'out) t -> *)
+(*   on_done:('out -> 'r) -> *)
+(*   ?on_err:(IterateeK.error -> 'r) -> *)
+(*   ?on_div:(('el, 'out) t -> 'r) -> *)
+(*   unit -> 'r *)
 

@@ -11,19 +11,17 @@ let rec map f = function
     
     Cont (fun e -> map f (k (f e)))
 
-  | SRecur {s;cp;ex;ret;k} ->
+  | Recur r ->
 
-    let k s el ret cont =
-      k s (f el) ret cont
+    let k s el ret err cont =
+      r.k s (f el) ret err cont
     in
-    let ret o =
-      map f (ret o)
+    let state = r.copy r.state in
+    let return o =
+      map f (r.return o)
     in
-    SRecur {s = cp s;
-	    cp;
-	    ex;
-	    ret;
-	    k}
+
+    Recur { r with state; return; k }
 
   | Error _
   | Done _ as it -> it  
@@ -85,15 +83,15 @@ let rec filter pred = function
     in
     Cont k
 
-  | SRecur {s;cp;ex;ret;k} ->
+  | Recur r ->
     
-    let k s el ret cont =
+    let k s el ret err cont =
       if pred el then
-	k s el ret cont
+	r.k s el ret err cont
       else
 	cont
     in
-    SRecur {s=cp s;cp;ex;ret;k}
+    Recur { r with k }
 
   | Error _
   | Done _ as it -> it
@@ -110,17 +108,17 @@ let rec filter_map f = function
     in
     Cont k
 
-  | SRecur {s;cp;ex;ret;k} ->
+  | Recur r ->
 
-    let k s el ret cont =
+    let k s el ret err cont =
       match f el with
-      | Some el' -> k s el' ret cont
+      | Some el' -> r.k s el' ret err cont
       | None	-> cont
     in
-    let ret o =
-      filter_map f (ret o)
+    let return o =
+      filter_map f (r.return o)
     in
-    SRecur {s=cp s;cp;ex;ret;k}
+    Recur { r with return; k }
 
   | Error _
   | Done _ as it -> it
@@ -129,15 +127,14 @@ let rec filter_map f = function
 
 let to_list =
   let k el =
-    let s = ref [el]
-    and cp s = ref !s
-    and ex s = Some (List.rev !s)
-    and ret o = return o
-    and k s el _ cont =
+    let state = ref [el]
+    and copy s = ref !s
+    and extract s = Some (List.rev !s)
+    and k s el _ _ cont =
       s := el :: !s;
       cont
     in
-    SRecur {s;cp;ex=ex;ret;k}
+    Recur {state;copy;extract;return;k}
   in
   Cont k
 
@@ -145,41 +142,39 @@ let to_list =
 
 let fold1 f = 
   let k el =
-    let s = ref el
-    and cp s = ref !s
-    and ex s = Some !s
-    and ret = return
-    and k s el _ cont =
+    let state = ref el
+    and copy s = ref !s
+    and extract s = Some !s
+    and k s el _ _ cont =
       s := f !s el;
       cont
     in
-    SRecur {s;cp;ex;ret;k}
+    Recur {state;copy;extract;return;k}
   in
   Cont k
 
 (*__________________________________________________________________________*)
 
 let fold f a =
-  let s = ref a
-  and cp s = s
-  and ex s = Some !s
-  and ret o = Done o
-  and k s x _ cont =
+  let state = ref a
+  and copy s = s
+  and extract s = Some !s
+  and k s x _ _ cont =
     s := f !s x;
     cont
   in
-  SRecur {s;cp;ex=ex;ret;k}
+  Recur {state;copy;extract;return;k}
 
 (*__________________________________________________________________________*)
 
 let iter f =
   let k el =
-    SRecur {
-      s=();
-      cp=id;
-      ex=(fun () -> Some ());
-      ret=(fun () -> Done ());
-      k=fun s el _ cont ->
+    Recur {
+      state=();
+      copy=id;
+      extract=(fun () -> Some ());
+      return;
+      k=fun s el _ _ cont ->
 	f el;
 	cont}
   in
@@ -202,37 +197,20 @@ let any_of pred =
 
 module All_of =
   struct
-    type 'a s = { mutable accum : bool;
-		  pred : 'a -> bool }
+    type 'a state = 'a -> bool
 
-    let copy { accum; pred } = { accum; pred }
+    let copy = id
 
-    let extract { accum; _ } = Some accum
+    let extract _ = Some true
 
-    let continuation s el return recur =
-      if s.pred el then
-	recur
+    let k pred el ret err cont =
+      if pred el then
+	cont
       else
-	return false
+	ret false
 
     let it pred =
-      recur
-	~state:{ accum = true; pred }
-	~copy
-	~extract
-	{ continuation }
+      Recur { state = pred; copy; extract; return; k }
   end
 
 let all_of pred = All_of.it pred
-  
-(*__________________________________________________________________________*)
-
-let execute
-    ~source
-    ~query
-    ~on_done
-    ?(on_err=(fun (_,exn) -> raise exn))
-    ?(on_div=(fun _ -> raise Divergence))
-    ()
-    =
-  finish on_done on_err on_div @@ source @@ query

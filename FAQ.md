@@ -5,8 +5,8 @@
 Originally, I used "foundation" as a name, but the objective-c base
 library for Apple's "OS X" and "iOS" already has the same name.
 	
-And because "fundament" is a word in German and English. It also
-sounds super cool.
+Also, "fundament" is a word in German and English. And because of that
+it is super cool.
 	
 **What is the deal with those iteratees?**
 	
