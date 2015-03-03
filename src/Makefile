@@ -1,4 +1,4 @@
-default: prof-it
+default: test-it
 
 sexpr-proto:
 	ocamlbuild sexpr_Prototype.native

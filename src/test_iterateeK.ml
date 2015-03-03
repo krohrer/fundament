@@ -19,35 +19,37 @@ let rec it = Cont (fun () ->
 
 external id : 'a -> 'a = "%identity"
 
-let it =  SRecur { s=();
-		   cp=id;
-		   ex=nonterm;
-		   ret=return;
-		   k=fun s el ret cont -> Error ("meh", Exit) }
+let it =  Recur { state=();
+		  copy=id;
+		  extract=nonterm;
+		  return;
+		  k=(fun s el ret err cont -> err Exit) }
 
 (* Multistaged transformations *)
 let _ =
-  finish (Printf.printf "Result = %f\n%!") (fun (_,exn) -> raise exn) ignore
+  finish 
+    ~ret_k:(Printf.printf "Result = %f\n%!")
+    ~err_k:raise
+    ~part_k:ignore
   @@ from_list l
   @@ filter (fun i -> i mod 2 = 0)
   @@ map float
   @@ fold (+.) 0.
 
-(* A query language using iteratees *)
+(* Raise divergence or inner exception if nonterm. *)
 let _ =
-  execute
-    ~source:(from_list l +++ from_list (List.rev l))
-    ~query:(map float @@ to_list)
-    ~on_done:id
-    ()
+  let l' =
+    finish_exn
+    @@ from_list l +++ from_list (List.rev l)
+    @@ map float
+    @@ to_list
+  in
+  Printf.printf "Count -> count : %d -> %d \n%!" (List.length l) (List.length l')
 
 (* Divergence *)
 let _ =
   try
-    execute
-      ~on_done:id
-      ~source:id
-      ~query:(Cont (fun e -> return e))
-      ()
+    finish_exn
+    @@ Cont (fun e -> return e)
   with
     Divergence -> Printf.eprintf "Divergent iteratee was expected here.\n%!"

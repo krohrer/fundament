@@ -11,6 +11,15 @@ let rec map f = function
     
     Cont (fun e -> map f (k (f e)))
 
+  | ContOpt k ->
+
+    let k = function
+      | None -> map f (k None)
+      | Some e -> map f (k (Some (f e)))
+    in
+
+    ContOpt k
+
   | Recur r ->
 
     let k s el ret err cont =
@@ -83,6 +92,19 @@ let rec filter pred = function
     in
     Cont k
 
+  | ContOpt k as it ->
+    
+    let k = function
+      | None -> filter pred (k None)
+      | Some el as e_opt ->
+	if pred el then 
+	  filter pred (k e_opt)
+	else
+	  filter pred it
+    in
+
+    ContOpt k
+
   | Recur r ->
     
     let k s el ret err cont =
@@ -107,6 +129,18 @@ let rec filter_map f = function
       | Some el' -> filter_map f (k el')
     in
     Cont k
+
+  | ContOpt k as it ->
+    
+    let k = function
+      | None -> filter_map f (k None)
+      | Some el ->
+	match f el with
+	| None -> filter_map f it
+	| e_opt -> filter_map f (k e_opt)
+    in
+
+    ContOpt k
 
   | Recur r ->
 

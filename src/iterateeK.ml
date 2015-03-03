@@ -7,6 +7,8 @@ type ('element,'result) t =
 
   | Cont :  ('e -> ('e,'r) t)			-> ('e,'r) t
 
+  | ContOpt : ('e option -> ('e,'r) t)	-> ('e,'r) t
+
   | Recur : {
     state	: 's;
     copy	: 's -> 's; 
@@ -61,6 +63,7 @@ let step ~ret_k ~err_k ~cont_k elem it =
   | Done out		-> ret_k out
   | Error e		-> err_k e
   | Cont k		-> cont_k (k elem)
+  | ContOpt k		-> cont_k (k (Some elem))
   | Recur r as it	-> cont_k (r.k r.state elem r.return error it)
 
 (* let step0 el it = *)
@@ -75,6 +78,7 @@ let step1 it el =
   | Done _
   | Error _ as it 	-> it
   | Cont k		-> k el
+  | ContOpt k		-> k (Some el)
   | Recur r as it	-> r.k r.state el r.return error it
 
 let rec finish ~ret_k ~err_k ~part_k it =
@@ -82,6 +86,7 @@ let rec finish ~ret_k ~err_k ~part_k it =
   | Done out		-> ret_k out
   | Error err		-> err_k err
   | Cont _ as it	-> part_k it
+  | ContOpt k		-> finish ~ret_k ~err_k ~part_k (k None)
   | Recur r as it	-> (
     match r.extract r.state with
     | None -> part_k it
@@ -106,6 +111,13 @@ let rec bind i fi =
       bind (k el) fi
     in
     Cont k
+
+  | ContOpt k ->
+    
+    let k e_opt =
+      bind (k e_opt) fi
+    in
+    ContOpt k
 
   | Recur r ->
 

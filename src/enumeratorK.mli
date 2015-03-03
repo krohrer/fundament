@@ -9,4 +9,4 @@ val (+++) : ('el,'a) t -> ('el,'a) t -> ('el,'a) t
 
 val from_array : 'a array -> ('a,'b) t
 val from_list : 'a list -> ('a,'b) t
-      
+val from_gen : (unit -> 'a option) -> ('a,'b) t
