@@ -7,19 +7,21 @@ let zero it = it
 let (+++) e1 e2 = fun it ->
   match e1 it with
   | Done _
-  | Error _ as it -> it
+  | Error _ as it	-> it
   | Cont _
-  | Recur _ as it -> e2 it
+  | ContOpt _
+  | Recur _ as it	-> e2 it
 
 let rec from_list' list i it =
   match list with
   | [] -> it
   | x::rest ->
     match it with
-    | Cont k		-> from_list' rest (i+1) (k i x)
-    | Recur r as recur	-> from_list' rest (i+1) (r.k r.state i x r.return error recur)
     | Done _
     | Error _ as it	-> it
+    | Cont k		-> from_list' rest (i+1) (k i x)
+    | ContOpt k		-> from_list' rest (i+1) (k i (Some x))
+    | Recur r as recur	-> from_list' rest (i+1) (r.k r.state i x r.return error recur)
 
 let from_list list it =
   from_list' list 0 it
@@ -27,11 +29,13 @@ let from_list list it =
 let rec from_array' arr i n it =
   let i = i + 1 in
   if i < n then
+    let x = arr.(i) in
     match it with 
-    | Cont k		-> from_array' arr i n (k i arr.(i))
-    | Recur r as recur	-> from_array' arr i n (r.k r.state i arr.(i) r.return error recur)
     | Done _
     | Error _ as it	-> it
+    | Cont k		-> from_array' arr i n (k i x)
+    | ContOpt k		-> from_array' arr i n (k i (Some x))
+    | Recur r as recur	-> from_array' arr i n (r.k r.state i x r.return error recur)
   else
     it
       

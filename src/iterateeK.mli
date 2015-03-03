@@ -7,23 +7,23 @@
 type ('element,'result) t = 
 
   (** The simplest case, an immediate result *)
-  | Done : 'r					->  ( _,'r) t
+  | Done	: 'r -> ( _,'r) t
 
   (** A captured exception with a position descriptor *)
-  | Error : exn -> ( _, _) t
+  | Error	: exn -> ( _, _) t
 
   (** A continuation that consumes one element of the stream *)
-  | Cont :  ('e -> ('e,'r) t)			-> ('e,'r) t
+  | Cont	:  ('e -> ('e,'r) t) -> ('e,'r) t
 
   (** A continuation that either consumes one element or terminates *)
-  | ContOpt : ('e option -> ('e,'r) t)	-> ('e,'r) t
+  | ContOpt	: ('e option -> ('e,'r) t) -> ('e,'r) t
 
   (** A recurring continuation, with copyable state, and a way for the
       [run]-family functions to extract a result at the end of the
       computation based on the last state.  The continuation function
       takes two continuations itself, one for the done case and one
       for the recurrence. *)
-  | Recur : {
+  | Recur	: {
     (** Internal state*)
     state	: 's;
     (** Copy state *)

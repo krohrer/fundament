@@ -1,21 +1,21 @@
 (*__________________________________________________________________________*)
 
 type ('element,'result) t = 
-  | Done : 'r					->  ( _,'r) t
+  | Done	: 'r -> ( _,'r) t
 
-  | Error : exn					-> ( _, _) t
+  | Error	: exn -> ( _, _) t
 
-  | Cont :  ('e -> ('e,'r) t)			-> ('e,'r) t
+  | Cont	: ('e -> ('e,'r) t) -> ('e,'r) t
 
-  | ContOpt : ('e option -> ('e,'r) t)	-> ('e,'r) t
+  | ContOpt	: ('e option -> ('e,'r) t) -> ('e,'r) t
 
-  | Recur : {
+  | Recur	: {
     state	: 's;
     copy	: 's -> 's; 
     extract	: 's -> 'r option;
     return	: 'r -> ('e,'r_cont) t;
     k		: 'a. 's -> 'e -> ('r->'a) -> (exn->'a)  -> 'a -> 'a
-  }						-> ('e,'r_cont) t
+  } -> ('e,'r_cont) t
 
 type ('el,'a) enumerator = ('el,'a) t -> ('el,'a) t
 

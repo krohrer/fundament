@@ -9,4 +9,3 @@ val (+++) : ('p,'e,'r) t -> ('p,'e,'r) t -> ('p,'e,'r) t
 
 val from_array : 'a array -> (int,'a,'b) t
 val from_list : 'a list -> (int,'a,'b) t
-      

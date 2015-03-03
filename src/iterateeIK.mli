@@ -12,6 +12,11 @@ type ('position,'element,'result) t =
 
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
 
+  (* Instead of passing ('p*'e) option, we require that there exists a
+     sentinel position (for when None is passed). This saves one pair
+     allocation per element. *)
+  | ContOpt	: ('p -> 'e option -> ('p,'e,'r) t)-> ('p,'e,'r) t
+
   | Recur : {
     state	: 's;
     copy	: 's -> 's;
@@ -44,11 +49,18 @@ val step :
 val step1 : ('p,'e,'r) t -> 'p -> 'e -> ('p,'e,'r) t
 
 val finish :
+  endp:'p ->
   ret_k:('r -> 'w) ->
   err_k:('p option -> exn -> 'w) ->
   part_k:('t -> 'w) ->
   (('p,_,'r) t as 't) -> 'w
 
-val finish_exn : (_,_,'r) t -> 'r
+val finish_exn : 'p -> ('p,_,'r) t -> 'r
 
 (*__________________________________________________________________________*)
+
+(* val inject_position : init:'p -> step:('p->'p) -> ('p,'e,'r) t -> ('e,'r) t *)
+(* val lift : ('e,'r) t -> ('p,'e,'r) t *)
+
+(*__________________________________________________________________________*)
+

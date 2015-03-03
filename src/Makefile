@@ -1,4 +1,4 @@
-default: test-it
+default: test
 
 sexpr-proto:
 	ocamlbuild sexpr_Prototype.native
@@ -25,9 +25,9 @@ pp-proto:
 	ocamlbuild prettyPrinting_Prototype.native
 	./prettyPrinting_Prototype.native
 
-test-it:
-	ocamlbuild test_iterateeK.native
-	./test_iterateeK.native
+test:
+	ocamlbuild test.native
+	./test.native
 
 dump:
 	@echo "Make: Dumping CMM"
@@ -37,10 +37,6 @@ dump:
 scratch:
 	ocamlbuild -cflags -rectypes scratch.native
 	./scratch.native
-
-test:
-	ocamlbuild testVector.byte
-	./testVector.byte
 
 scratch.cmm:
 	ocamlbuild scratch.cmx

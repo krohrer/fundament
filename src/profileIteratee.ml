@@ -265,7 +265,7 @@ and profile_iteratee_array () =
 	    recur
 	}
       in
-      finish_exn (EnumeratorIK.from_array int_array it) |>
+      finish_exn (-1) (EnumeratorIK.from_array int_array it) |>
 	  cont_with_result );
   ()
 
@@ -392,7 +392,7 @@ and profile_iteratee_list () =
 	    recur
 	}
       in
-      EnumeratorIK.from_list int_list it |> finish_exn |> cont_with_result
+      EnumeratorIK.from_list int_list it |> finish_exn (-1) |> cont_with_result
     );
   ()
 

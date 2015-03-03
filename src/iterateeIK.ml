@@ -5,6 +5,8 @@ type ('position,'element,'result) t =
 
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
 
+  | ContOpt	: ('p -> 'e option -> ('p,'e,'r) t)-> ('p,'e,'r) t
+
   | Recur : {
     state	: 's;
     copy	: 's -> 's;
@@ -36,6 +38,7 @@ let step ~ret_k ~err_k ~cont_k pos elem it =
   | Done out		-> ret_k out
   | Error (popt, exn)	-> err_k popt exn
   | Cont k		-> cont_k (k pos elem)
+  | ContOpt k		-> cont_k (k pos (Some elem))
   | Recur r as it	-> cont_k (r.k r.state pos elem r.return error it)
     
 let step1 it pos elem =
@@ -43,24 +46,26 @@ let step1 it pos elem =
   | Done _
   | Error _ as it	-> it
   | Cont k		-> k pos elem
+  | ContOpt k		-> k pos (Some elem)
   | Recur r as it	-> r.k r.state pos elem r.return error it
 
-let rec finish ~ret_k ~err_k ~part_k it =
+let rec finish ~endp ~ret_k ~err_k ~part_k it =
   match it with
   | Done out		-> ret_k out
   | Error (popt,exn)	-> err_k popt exn
   | Cont k as it	-> part_k it
+  | ContOpt k		-> finish ~endp ~ret_k ~err_k ~part_k (k endp None)
   | Recur r as it	-> (
     match r.extract r.state with
     | None -> part_k it
-    | Some out -> finish ~ret_k ~err_k ~part_k (r.return out)
+    | Some out -> finish ~endp ~ret_k ~err_k ~part_k (r.return out)
   )
 
 let error_raise _ x = raise x
 let raise_divergence _ = raise Divergence
 
-let finish_exn it =
-  finish ~ret_k:id ~err_k:error_raise ~part_k:raise_divergence it
+let finish_exn endp it =
+  finish ~endp ~ret_k:id ~err_k:error_raise ~part_k:raise_divergence it
 
 (*__________________________________________________________________________*)
 
@@ -76,6 +81,13 @@ let rec bind it f =
       bind (k p el) f
     in
     Cont k
+
+  | ContOpt k ->
+    
+    let k p e_opt =
+      bind (k p e_opt) f
+    in
+    ContOpt k
 
   | Recur r ->
     
