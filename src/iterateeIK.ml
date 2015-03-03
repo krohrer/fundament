@@ -1,7 +1,7 @@
 type ('position,'element,'result) t =
   | Done	: 'r -> (_,_,'r) t
 
-  | Error	: 'p option * exn -> ('p,_,_) t
+  | Error	: exn -> (_,_,_) t
 
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
 
@@ -12,7 +12,7 @@ type ('position,'element,'result) t =
     copy	: 's -> 's;
     extract	: 's -> 'r option;
     return	: 'r -> ('p,'e,'r_cont) t;
-    k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> ('p -> exn -> 'a) -> 'a -> 'a
+    k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> (exn -> 'a) -> 'a -> 'a
   } -> (('p,'e,'r_cont) t as 't)
 
 type ('p,'e,'r) enumerator = ('p,'e,'r) t -> ('p,'e,'r) t
@@ -31,12 +31,12 @@ let nonterm : _ -> _ option = fun _ -> None
 
 exception Divergence = IterateeK.Divergence
 
-let error p exn = Error (Some p, exn)
+let error exn = Error exn
 
 let step ~ret_k ~err_k ~cont_k pos elem it =
   match it with
   | Done out		-> ret_k out
-  | Error (popt, exn)	-> err_k popt exn
+  | Error exn		-> err_k exn
   | Cont k		-> cont_k (k pos elem)
   | ContOpt k		-> cont_k (k pos (Some elem))
   | Recur r as it	-> cont_k (r.k r.state pos elem r.return error it)
@@ -52,7 +52,7 @@ let step1 it pos elem =
 let rec finish ~endp ~ret_k ~err_k ~part_k it =
   match it with
   | Done out		-> ret_k out
-  | Error (popt,exn)	-> err_k popt exn
+  | Error exn		-> err_k exn
   | Cont k as it	-> part_k it
   | ContOpt k		-> finish ~endp ~ret_k ~err_k ~part_k (k endp None)
   | Recur r as it	-> (
@@ -61,11 +61,10 @@ let rec finish ~endp ~ret_k ~err_k ~part_k it =
     | Some out -> finish ~endp ~ret_k ~err_k ~part_k (r.return out)
   )
 
-let error_raise _ x = raise x
 let raise_divergence _ = raise Divergence
 
 let finish_exn endp it =
-  finish ~endp ~ret_k:id ~err_k:error_raise ~part_k:raise_divergence it
+  finish ~endp ~ret_k:id ~err_k:raise ~part_k:raise_divergence it
 
 (*__________________________________________________________________________*)
 
@@ -95,5 +94,41 @@ let rec bind it f =
       bind (r.return o) f
     in
     Recur {r with return; state = r.copy r.state}
+
+(*__________________________________________________________________________*)
+
+let inject_position ~init ~step ik =
+  failwith "TODO"
+
+module I = IterateeK
+
+let rec inject_position ~pos ~incr = failwith "TODO: IterateeIK.inject_position"
+  (* function *)
+  (* | Done out	-> I.Done out *)
+  (* | Error exn	-> I.Error exn *)
+  (* | Cont k	-> I.Cont (fun x -> inject_position ~pos:(incr pos) ~incr (k pos x)) *)
+  (* | ContOpt k	-> I.ContOpt (fun x_opt -> inject_position ~pos:(incr pos) ~incr (k pos x)) *)
+  (* | Recur r	-> I.Recur { *)
+  (*   state = r.copy r.state; *)
+  (*   copy = r.copy; *)
+  (*   extract = r.extract; *)
+  (*   return = r.return; (\* Do we need a additional position argument for return? I think we do! *\) *)
+  (* } *)
+
+
+let rec discard_position = function
+  | I.Done out	-> Done out
+  | I.Error exn -> Error exn
+  | I.Cont k	-> Cont (fun _ x -> discard_position (k x))
+  | I.ContOpt k -> ContOpt (fun _ x_opt -> discard_position (k x_opt))
+  | I.Recur r	-> Recur {
+    state = r.copy r.state;
+    copy = r.copy;
+    extract = r.extract;
+    return = (fun out -> discard_position (r.return out));
+    k = fun st _ el ret err cont ->
+      r.k st el ret err cont
+  }
+
 
 (*__________________________________________________________________________*)

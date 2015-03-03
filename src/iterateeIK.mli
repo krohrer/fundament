@@ -8,7 +8,7 @@
 type ('position,'element,'result) t =
   | Done	: 'r -> (_,_,'r) t
 
-  | Error	: 'p option * exn -> ('p,_,_) t
+  | Error	: exn -> (_,_,_) t
 
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
 
@@ -22,7 +22,7 @@ type ('position,'element,'result) t =
     copy	: 's -> 's;
     extract	: 's -> 'r option;
     return	: 'r -> ('p,'e,'r_cont) t;
-    k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> ('p -> exn -> 'a) -> 'a -> 'a
+    k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> (exn -> 'a) -> 'a -> 'a
   } -> (('p,'e,'r_cont) t as 't)
 
 type ('p,'e,'r) enumerator = ('p,'e,'r) t -> ('p,'e,'r) t
@@ -38,11 +38,11 @@ val bind	: ('a,'b,'c) t -> ('c -> ('a,'b,'d) t) -> ('a,'b,'d) t
 
 exception Divergence
 
-val error : 'p -> exn -> ('p,_,_) t
+val error : exn -> ('p,_,_) t
 
 val step :
   ret_k:('r -> 'w) ->
-  err_k:('p option -> exn -> 'w) ->
+  err_k:(exn -> 'w) ->
   cont_k:(('p,'e,'r) t -> 'w) ->
   'p -> 'e -> (('p,'e,'r) t as 't) -> 'w
 
@@ -51,7 +51,7 @@ val step1 : ('p,'e,'r) t -> 'p -> 'e -> ('p,'e,'r) t
 val finish :
   endp:'p ->
   ret_k:('r -> 'w) ->
-  err_k:('p option -> exn -> 'w) ->
+  err_k:(exn -> 'w) ->
   part_k:('t -> 'w) ->
   (('p,_,'r) t as 't) -> 'w
 
@@ -59,8 +59,8 @@ val finish_exn : 'p -> ('p,_,'r) t -> 'r
 
 (*__________________________________________________________________________*)
 
-(* val inject_position : init:'p -> step:('p->'p) -> ('p,'e,'r) t -> ('e,'r) t *)
-(* val lift : ('e,'r) t -> ('p,'e,'r) t *)
+val inject_position : pos:'p -> incr:('p->'p) -> ('p,'e,'r) t -> ('e,'r) IterateeK.t
+val discard_position : ('e,'r) IterateeK.t -> ('p,'e,'r) t
 
 (*__________________________________________________________________________*)
 
