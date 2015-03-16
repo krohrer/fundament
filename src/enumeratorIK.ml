@@ -20,7 +20,7 @@ let rec from_list' list i it =
     | Done _
     | Error _ as it	-> it
     | Cont k		-> from_list' rest (i+1) (k i x)
-    | ContOpt k		-> from_list' rest (i+1) (k i (Some x))
+    | ContOpt k		-> from_list' rest (i+1) (k (Option.Some2 (i,x)))
     | Recur r as recur	-> from_list' rest (i+1) (r.k r.state i x r.return error recur)
 
 let from_list list it =
@@ -34,7 +34,7 @@ let rec from_array' arr i n it =
     | Done _
     | Error _ as it	-> it
     | Cont k		-> from_array' arr i n (k i x)
-    | ContOpt k		-> from_array' arr i n (k i (Some x))
+    | ContOpt k		-> from_array' arr i n (k (Option.Some2 (i,x)))
     | Recur r as recur	-> from_array' arr i n (r.k r.state i x r.return error recur)
   else
     it

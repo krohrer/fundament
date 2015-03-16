@@ -1,12 +1,8 @@
 type ('position,'element,'result) t =
   | Done	: 'r -> (_,_,'r) t
-
   | Error	: exn -> (_,_,_) t
-
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
-
-  | ContOpt	: ('p -> 'e option -> ('p,'e,'r) t)-> ('p,'e,'r) t
-
+  | ContOpt	: (('p,'e) option2 -> ('p,'e,'r) t)-> ('p,'e,'r) t
   | Recur : {
     state	: 's;
     copy	: 's -> 's;
@@ -14,6 +10,8 @@ type ('position,'element,'result) t =
     return	: 'r -> ('p,'e,'r_cont) t;
     k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> (exn -> 'a) -> 'a -> 'a
   } -> (('p,'e,'r_cont) t as 't)
+
+and ('a,'b) option2 = ('a,'b) Option.t2
 
 type ('p,'e,'r) enumerator = ('p,'e,'r) t -> ('p,'e,'r) t
 
@@ -38,7 +36,7 @@ let step ~ret_k ~err_k ~cont_k pos elem it =
   | Done out		-> ret_k out
   | Error exn		-> err_k exn
   | Cont k		-> cont_k (k pos elem)
-  | ContOpt k		-> cont_k (k pos (Some elem))
+  | ContOpt k		-> cont_k (k (Option.Some2 (pos, elem)))
   | Recur r as it	-> cont_k (r.k r.state pos elem r.return error it)
     
 let step1 it pos elem =
@@ -46,7 +44,7 @@ let step1 it pos elem =
   | Done _
   | Error _ as it	-> it
   | Cont k		-> k pos elem
-  | ContOpt k		-> k pos (Some elem)
+  | ContOpt k		-> k (Option.Some2 (pos, elem))
   | Recur r as it	-> r.k r.state pos elem r.return error it
 
 let rec finish ~endp ~ret_k ~err_k ~part_k it =
@@ -54,7 +52,7 @@ let rec finish ~endp ~ret_k ~err_k ~part_k it =
   | Done out		-> ret_k out
   | Error exn		-> err_k exn
   | Cont k as it	-> part_k it
-  | ContOpt k		-> finish ~endp ~ret_k ~err_k ~part_k (k endp None)
+  | ContOpt k		-> finish ~endp ~ret_k ~err_k ~part_k (k Option.None2)
   | Recur r as it	-> (
     match r.extract r.state with
     | None -> part_k it
@@ -83,8 +81,8 @@ let rec bind it f =
 
   | ContOpt k ->
     
-    let k p e_opt =
-      bind (k p e_opt) f
+    let k p_e_opt =
+      bind (k p_e_opt) f
     in
     ContOpt k
 
@@ -97,30 +95,35 @@ let rec bind it f =
 
 (*__________________________________________________________________________*)
 
-let inject_position ~init ~step ik =
-  failwith "TODO"
-
 module I = IterateeK
 
-let rec inject_position ~pos ~incr = failwith "TODO: IterateeIK.inject_position"
-  (* function *)
-  (* | Done out	-> I.Done out *)
-  (* | Error exn	-> I.Error exn *)
-  (* | Cont k	-> I.Cont (fun x -> inject_position ~pos:(incr pos) ~incr (k pos x)) *)
-  (* | ContOpt k	-> I.ContOpt (fun x_opt -> inject_position ~pos:(incr pos) ~incr (k pos x)) *)
-  (* | Recur r	-> I.Recur { *)
-  (*   state = r.copy r.state; *)
-  (*   copy = r.copy; *)
-  (*   extract = r.extract; *)
-  (*   return = r.return; (\* Do we need a additional position argument for return? I think we do! *\) *)
-  (* } *)
+(* module InjectPosition = *)
+(*   struct *)
+(*     type ('p,'e,'r) state = { *)
+(*       incr		: 'p -> 'p; *)
+(*       mutable pos	: 'p; *)
+(*       mutable inner	: ('p,'e,'r) I.t; *)
+(*     } *)
 
+(*     let rec make ~pos ~incr = function *)
+(*       | Done out	-> I.Done out *)
+(*       | Error exn	-> I.Error exn *)
+(*       | Cont k		-> I.Cont (fun x -> inject_position ~pos:(incr pos) ~incr (k pos x)) *)
+(*       | ContOpt k	-> I.ContOpt (fun x_opt -> inject_position ~pos:(incr pos) ~incr (k pos x_opt)) *)
+(*       | Recur r as it	-> failwith "TODO" *)
+(*   end *)
+
+(* let inject_position ~pos ~incr = InjectPosition.make ~pos ~incr  *)
+
+let inject_position = failwith "TODO"
 
 let rec discard_position = function
   | I.Done out	-> Done out
   | I.Error exn -> Error exn
   | I.Cont k	-> Cont (fun _ x -> discard_position (k x))
-  | I.ContOpt k -> ContOpt (fun _ x_opt -> discard_position (k x_opt))
+  | I.ContOpt k -> ContOpt (function 
+    | Option.None2 -> discard_position (k None)
+    | Option.Some2 (p,e) -> discard_position (k (Some e)))
   | I.Recur r	-> Recur {
     state = r.copy r.state;
     copy = r.copy;

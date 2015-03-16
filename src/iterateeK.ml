@@ -2,13 +2,9 @@
 
 type ('element,'result) t = 
   | Done	: 'r -> ( _,'r) t
-
   | Error	: exn -> ( _, _) t
-
   | Cont	: ('e -> ('e,'r) t) -> ('e,'r) t
-
   | ContOpt	: ('e option -> ('e,'r) t) -> ('e,'r) t
-
   | Recur	: {
     state	: 's;
     copy	: 's -> 's; 
@@ -127,3 +123,11 @@ let rec bind i fi =
     Recur {r with return; state}
 
 (*__________________________________________________________________________*)
+
+let copy = function
+  | Done _
+  | Error _
+  | Cont _
+  | ContOpt _ as it	-> it
+  | Recur r		-> Recur { r with state = r.copy r.state }
+

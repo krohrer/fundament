@@ -3,7 +3,11 @@
     
     The iteratee type, with the first two cases very similar to the
     ones from Oleg's paper, plus an additinal case for an impure,
-    stateful implementation, and a case for an unrecoverable error. *)
+    stateful implementation, and a case for an unrecoverable error. 
+
+    Also: ContOpt is like Cont, but the value for End of Stream is not
+    implicit to the element type but an explicit None value.
+*)
 type ('element,'result) t = 
 
   (** The simplest case, an immediate result *)
@@ -37,12 +41,14 @@ type ('element,'result) t =
     k		: 'a. 's -> 'e-> ('r->'a) -> (exn->'a) -> 'a -> 'a
   } -> ('e,'r_cont) t
 
+(*__________________________________________________________________________*)
+
 (** Polymorphic continuation (contained in record to stay polymorphic) *)
 (* and ('s,'el,'b) k = { continuation : 't1 't2 . 's->'el->('b->'t)->'t->(('t1,'t2) t as 't) } *)
 
-(** An enumerator is iteration and resource management in one producer.
+(** An enumerator is a producer with built-in iteration and resource management
 
-    I skipped the monad, because we're unpure anyway.
+    I skipped the monad, because we're unpure anyway. ???
 *)
 type ('el,'a) enumerator = ('el,'a) t -> ('el,'a) t
 
@@ -97,3 +103,6 @@ val finish :
 
 val finish_exn : (_,'r) t -> 'r
 
+(**/**)
+
+val copy : ('e,'r) t -> ('e,'r) t
