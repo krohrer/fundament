@@ -18,7 +18,7 @@ type ('position,'element,'result) t =
      option-like type that can hold an unpacked pair of values,
      saving one indirection at the cost of code duplication /
      specialized option types for tuples. *)
-  | ContOpt	: (('p,'e) option2 -> ('p,'e,'r) t)-> ('p,'e,'r) t
+  | ContOpt	: (('p*'e) option -> ('p,'e,'r) t)-> ('p,'e,'r) t
   | Recur : {
     state	: 's;
     copy	: 's -> 's;
@@ -26,8 +26,6 @@ type ('position,'element,'result) t =
     return	: 'r -> ('p,'e,'r_cont) t;
     k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> (exn -> 'a) -> 'a -> 'a
   } -> (('p,'e,'r_cont) t as 't)
-
-and ('a,'b) option2 = ('a,'b) Option.t2
 
 type ('p,'e,'r) enumerator = ('p,'e,'r) t -> ('p,'e,'r) t
 

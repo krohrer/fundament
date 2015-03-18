@@ -2,7 +2,7 @@ type ('position,'element,'result) t =
   | Done	: 'r -> (_,_,'r) t
   | Error	: exn -> (_,_,_) t
   | Cont	: ('p -> 'e -> ('p,'e,'r) t) -> ('p,'e,'r) t
-  | ContOpt	: (('p,'e) option2 -> ('p,'e,'r) t)-> ('p,'e,'r) t
+  | ContOpt	: (('p*'e) option -> ('p,'e,'r) t)-> ('p,'e,'r) t
   | Recur : {
     state	: 's;
     copy	: 's -> 's;
@@ -10,8 +10,6 @@ type ('position,'element,'result) t =
     return	: 'r -> ('p,'e,'r_cont) t;
     k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> (exn -> 'a) -> 'a -> 'a
   } -> (('p,'e,'r_cont) t as 't)
-
-and ('a,'b) option2 = ('a,'b) Option.t2
 
 type ('p,'e,'r) enumerator = ('p,'e,'r) t -> ('p,'e,'r) t
 
@@ -36,7 +34,7 @@ let step ~ret_k ~err_k ~cont_k pos elem it =
   | Done out		-> ret_k out
   | Error exn		-> err_k exn
   | Cont k		-> cont_k (k pos elem)
-  | ContOpt k		-> cont_k (k (Option.Some2 (pos, elem)))
+  | ContOpt k		-> cont_k (k (Some (pos, elem)))
   | Recur r as it	-> cont_k (r.k r.state pos elem r.return error it)
     
 let step1 it pos elem =
@@ -44,7 +42,7 @@ let step1 it pos elem =
   | Done _
   | Error _ as it	-> it
   | Cont k		-> k pos elem
-  | ContOpt k		-> k (Option.Some2 (pos, elem))
+  | ContOpt k		-> k (Some (pos, elem))
   | Recur r as it	-> r.k r.state pos elem r.return error it
 
 let rec finish ~ret_k ~err_k ~part_k it =
@@ -52,7 +50,7 @@ let rec finish ~ret_k ~err_k ~part_k it =
   | Done out		-> ret_k out
   | Error exn		-> err_k exn
   | Cont k as it	-> part_k it
-  | ContOpt k		-> finish ~ret_k ~err_k ~part_k (k Option.None2)
+  | ContOpt k		-> finish ~ret_k ~err_k ~part_k (k None)
   | Recur r as it	-> (
     match r.extract r.state with
     | None -> part_k it
@@ -117,8 +115,8 @@ module InjectPosition =
       | Error exn	-> I.Error exn
       | Cont k		-> I.Cont (fun x -> make ~pos:(incr pos) ~incr (k pos x))
       | ContOpt k	-> I.ContOpt (function
-	| None -> make ~pos:(incr pos) ~incr (k Option.None2)
-	| Some e -> make ~pos:(incr pos) ~incr (k (Option.Some2 (pos,e))))
+	| None -> make ~pos:(incr pos) ~incr (k None)
+	| Some e -> make ~pos:(incr pos) ~incr (k (Some (pos,e))))
       | Recur r	-> 
 	let state = { incr; pos; inner_state = r.copy r.state }
 	and copy s = { s with inner_state = r.copy r.state }
@@ -140,8 +138,8 @@ let rec discard_position = function
   | I.Error exn -> Error exn
   | I.Cont k	-> Cont (fun _ x -> discard_position (k x))
   | I.ContOpt k -> ContOpt (function 
-    | Option.None2 -> discard_position (k None)
-    | Option.Some2 (p,e) -> discard_position (k (Some e)))
+    | None -> discard_position (k None)
+    | Some (p,e) -> discard_position (k (Some e)))
   | I.Recur r	-> Recur {
     state = r.copy r.state;
     copy = r.copy;
