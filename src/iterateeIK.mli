@@ -23,7 +23,7 @@ type ('position,'element,'result) t =
     state	: 's;
     copy	: 's -> 's;
     extract	: 's -> 'r option;
-    return	: 'r -> ('p,'e,'r_cont) t; (* For inject_position, we'd like to have the position as well. *)
+    return	: 'r -> ('p,'e,'r_cont) t;
     k		: 'a. 's -> 'p -> 'e -> ('r -> 'a) -> (exn -> 'a) -> 'a -> 'a
   } -> (('p,'e,'r_cont) t as 't)
 
@@ -53,13 +53,12 @@ val step :
 val step1 : ('p,'e,'r) t -> 'p -> 'e -> ('p,'e,'r) t
 
 val finish :
-  endp:'p ->
   ret_k:('r -> 'w) ->
   err_k:(exn -> 'w) ->
   part_k:('t -> 'w) ->
   (('p,_,'r) t as 't) -> 'w
 
-val finish_exn : 'p -> ('p,_,'r) t -> 'r
+val finish_exn : ('p,_,'r) t -> 'r
 
 (*__________________________________________________________________________*)
 
